@@ -5,4 +5,8 @@ w.cpp
 __pycache__/
 *.pyc
 .vscode/
+*.o
+*.obj
+*.out
+
 
