@@ -1,0 +1,8 @@
+w
+w.cpp
+*.exe
+.venv/
+__pycache__/
+*.pyc
+.vscode/
+
