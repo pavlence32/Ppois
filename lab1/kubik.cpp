@@ -1,45 +1,7 @@
 #include "kubik.h"
 #include <iostream>
-#include <fstream>
 #include <ctime>
 #include <cstdlib>
-void Kubick::get_index(int * arr,int size,int a)
-{
-    switch (a)
-    {
-        case 0:
-        arr[0]=2;
-        arr[1]=3;
-        arr[2]=4;
-        arr[3]=5;
-        case 1:
-        arr[0]=2;
-        arr[1]=3;
-        arr[2]=4;
-        arr[3]=5;
-        case 2:
-        arr[0]=0;
-        arr[1]=3;
-        arr[2]=1;
-        arr[3]=5;
-        case 3:
-        arr[0]=0;
-        arr[1]=1;
-        arr[2]=4;
-        arr[3]=5;
-        case 4:
-        arr[0]=0;
-        arr[1]=5;
-        arr[2]=1;
-        arr[3]=5;
-        case 5:
-        arr[0]=0;
-        arr[1]=2;
-        arr[2]=1;
-        arr[3]=4;
-
-    }
-}
 char Kubick::fill_place(int index)
 {
     switch (index)
@@ -148,40 +110,104 @@ void Kubick::get_col(int f,int s,char * out)
 void Kubick::set_col(int f,int s,char * out)
 {
     for (int i=0;i<3;i++)
-    out[i]=faces[f][i][s];
+    faces[f][i][s]=out[i];
+}
+void Kubick::rotate_face_matrix(int face)
+{
+    char faceh[3][3];
+    for (int i=0;i<3;i++)
+    {
+        for(int j=0;j<3;j++)
+        {
+            faceh[j][2-i]=faces[face][i][j];
+        }
+    }
+    for(int i=0;i<3;i++)
+    {
+        for(int j=0;j<3;j++)
+        {
+            faces[face][i][j]=faceh[i][j];
+        }
+    }
+}
+void Kubick::shift_neighbours(int face)
+{
+    char temp[3], buf[3];
+
+    switch (face)
+    {
+        case 0: 
+            get_row(2, 0, temp);
+            get_row(5, 0, buf); set_row(2, 0, buf);
+            get_row(4, 0, buf); set_row(5, 0, buf);
+            get_row(3, 0, buf); set_row(4, 0, buf);
+            set_row(3, 0, temp);
+            break;
+
+        case 1: 
+            get_row(2, 2, temp);
+            get_row(3, 2, buf); set_row(2, 2, buf);
+            get_row(4, 2, buf); set_row(3, 2, buf);
+            get_row(5, 2, buf); set_row(4, 2, buf);
+            set_row(5, 2, temp);
+            break;
+
+        case 2: 
+            get_row(0, 2, temp);
+            get_col(5, 2, buf); set_row(0, 2, buf);
+            get_row(1, 0, buf); set_col(5, 2, buf);
+            get_col(3, 0, buf); set_row(1, 0, buf);
+            set_col(3, 0, temp);
+            break;
+
+        case 3: 
+            get_col(0, 2, temp);
+            get_col(2, 2, buf); set_col(0, 2, buf);
+            get_col(1, 2, buf); set_col(2, 2, buf);
+            get_col(4, 0, buf); set_col(1, 2, buf);
+            set_col(4, 0, temp);
+            break;
+
+        case 4: 
+            get_row(0, 0, temp);
+            get_col(3, 2, buf); set_row(0, 0, buf);
+            get_row(1, 2, buf); set_col(3, 2, buf);
+            get_col(5, 0, buf); set_row(1, 2, buf);
+            set_col(5, 0, temp);
+            break;
+
+        case 5:
+            get_col(0, 0, temp);
+            get_col(4, 2, buf); set_col(0, 0, buf);
+            get_col(1, 0, buf); set_col(4, 2, buf);
+            get_col(2, 0, buf); set_col(1, 0, buf);
+            set_col(2, 0, temp);
+            break;
+    }
 }
 Kubick &Kubick::turn(int a)
 {
+    if (a < 0 || a > 5)
+    {
+        std::cout << "Неверный индекс грани\n";
+        return *this;
+    }
     int choose;
     std::cout << "1- ->\n2- <-\n";
-    std::cin >> choose;
-    switch (choose)
+    std::cin>>choose;
+    switch(choose)
     {
-    case 1:
-        char **arr = new char *[3];
-        for (int i = 0; i < 3; i++)
-            arr[i] = new char[3];
-
-        for (int i = 0; i < 3; i++)
-        {
-            for (int j = 0; j < 3; j++)
-            {
-                arr[j][2 - i] = faces[a][i][j];
-            }
-        }
-        char xranenie[3];
-        int list[4];
-        Kubick::get_index(list,4,a);
-
-        for (int i = 0; i < 3; i++)
-        {
-            for (int j = 0; j < 3; j++)
-            {
-                faces[a][i][j] = arr[i][j];
-            }
-        }
-        for(int i=0;i<3;i++)
-        delete [] arr[i];
-        delete []arr;
+        case 1:
+        rotate_face_matrix(a);
+        shift_neighbours(a);
+        return *this;
+        break;
+        case 2:
+        for (int i=0;i<3;i++)
+        {rotate_face_matrix(a);
+        shift_neighbours(a);}
+        return * this;
+        break;
     }
+
 }
