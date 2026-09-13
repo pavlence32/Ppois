@@ -1,5 +1,4 @@
 #include "kubik.h"
-#include <iostream>
 #include <ctime>
 #include <cstdlib>
 char Kubick::fill_place(int index)
@@ -18,7 +17,22 @@ char Kubick::fill_place(int index)
         return 'O';
     case 5:
         return 'G';
+    default:
+        return '?';
     }
+}
+bool operator==(const Kubick &b,const Kubick&a)
+{
+    for (int i = 0; i < 6; i++)
+        for (int j = 0; j < 3; j++)
+            for (int k = 0; k < 3; k++)
+                if (b.faces[i][j][k] != a.faces[i][j][k])
+                    return false;
+    return true;
+}
+bool operator!=(const Kubick&b,const Kubick &a)
+{
+    return !(b==a);
 }
 Kubick::Kubick()
 {
@@ -33,15 +47,8 @@ Kubick::Kubick()
         }
     }
 }
-void Kubick::load_color(std::string s)
+bool Kubick::load_color(std::istream& inf)
 {
-    std::ifstream inf(s);
-    if (!inf)
-    {
-        std::cout << "Ошибка открытия файла\n";
-        return;
-    }
-
     for (int i = 0; i < 6; i++)
     {
         for (int j = 0; j < 3; j++)
@@ -50,14 +57,12 @@ void Kubick::load_color(std::string s)
             {
                 char c;
                 if (!(inf >> c))
-                {
-                    std::cout << "В файле недостаточно записей\n";
-                    return;
-                }
+                {return false;}
                 faces[i][j][k] = c;
             }
         }
     }
+    return true;
 }
 void Kubick::random_place()
 {
@@ -76,21 +81,8 @@ void Kubick::random_place()
 }
 bool Kubick::checkcolorplace()
 {
-    for (int i = 0; i < 6; i++)
-    {
-        for (int j = 0; j < 3; j++)
-        {
-            for (int k = 0; k < 3; k++)
-            {
-                if (faces[i][j][k] != fill_place(i))
-                {
-                    std::cout << "Кубик собран не до конца\n";
-                    return false;
-                }
-            }
-        }
-    }
-    return true;
+    Kubick a;
+    return *this==a;
 }
 void Kubick::get_row(int f,int s,char * out)
 {
@@ -185,29 +177,38 @@ void Kubick::shift_neighbours(int face)
             break;
     }
 }
-Kubick &Kubick::turn(int a)
+std::ostream& operator<<(std::ostream &out,Kubick &a)
 {
-    if (a < 0 || a > 5)
+    for (int i = 0; i < 6; i++)
     {
-        std::cout << "Неверный индекс грани\n";
-        return *this;
+        out << i << ": ";
+        for (int j = 0; j < 3; j++)
+        {
+            for (int m = 0; m < 3; m++)
+            {
+                out << a.faces[i][j][m];
+                if (m != 2)
+                    out << ' ';
+            }
+            out << '\n';
+        }
     }
-    int choose;
-    std::cout << "1- ->\n2- <-\n";
-    std::cin>>choose;
-    switch(choose)
+    return out;
+
+}
+Kubick &Kubick::turn(int a,int trav)
+{
+    switch(trav)
     {
         case 1:
         rotate_face_matrix(a);
         shift_neighbours(a);
         return *this;
-        break;
-        case 2:
+        case 0:
         for (int i=0;i<3;i++)
         {rotate_face_matrix(a);
         shift_neighbours(a);}
         return * this;
-        break;
     }
 
 }
