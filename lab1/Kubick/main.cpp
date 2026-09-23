@@ -1,5 +1,4 @@
 #include "kubik.h"
-#include <iostream>
 #include <fstream>
 #include <cstdlib>
 void menu()

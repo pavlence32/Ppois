@@ -13,4 +13,7 @@ Sometxt.txt
 html
 latex
 Doxyfile
+build
+test
+CMakeLists.txt
 
