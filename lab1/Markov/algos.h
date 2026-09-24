@@ -19,7 +19,7 @@ class Parser
 {
     public:
     static Rule translate(std::string &s);
-    static std::vector<Rule> parser(std::string &filename);
+    static std::vector<Rule> parser(const std::string &filename);
 
 };
 class Markov
@@ -28,6 +28,7 @@ class Markov
     std::string word;
     std::vector<Rule> rules;
     public:
+    Markov(std::string a,const std::string & filename);
     std::string get_result();
     bool step();
     void run();

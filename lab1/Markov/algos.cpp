@@ -77,3 +77,9 @@ void Markov::run()
 {
     while(step()){};
 }
+Markov::Markov(std::string a,const std::string & filename)
+{
+    word=a;
+    rules=Parser::parser(filename);
+
+}
