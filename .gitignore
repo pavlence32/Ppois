@@ -9,11 +9,10 @@ __pycache__/
 *.obj
 *.out
 kubik
-Sometxt.txt
-html
+lab1/Kubick/html/*
+!lab1/Kubick/html/index.html
+lab1/Markov/html/*
+!lab1/Markov/html/index.html
 latex
-Doxyfile
 build
-test
-CMakeLists.txt
 

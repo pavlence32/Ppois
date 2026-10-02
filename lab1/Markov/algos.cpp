@@ -1,5 +1,4 @@
 #include "algos.h"
-#include <fstream>
 Rule::Rule(std::string right, std::string left, bool is_final)
 {
     this->right = right;
@@ -40,9 +39,9 @@ Rule Parser::translate(std::string &s)
     left = s.substr(0, len);
     right = s.substr(len + 2 + (is_final ? 1 : 0));   
 
-    return Rule(left, right, is_final);
+    return Rule(right, left, is_final);
 }
-std::vector<Rule> parser(std::string &filename)
+std::vector<Rule> Parser::parser(const std::string &filename)
 {
     std::vector<Rule> ruls;
     std::string line;

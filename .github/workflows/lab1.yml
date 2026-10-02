@@ -1,0 +1,147 @@
+name: Lab 1 CI
+
+on:
+
+  pull_request:
+    paths:
+      - 'lab1/**'
+      - '.github/workflows/lab1.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Build, test, coverage and lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ gcovr clang-tidy
+
+
+
+      - name: Configure Kubick
+        run: |
+          cmake \
+            -S lab1/Kubick \
+            -B lab1/Kubick/build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Build Kubick
+        run: cmake --build lab1/Kubick/build --parallel
+
+      - name: Test Kubick
+        run: |
+          ctest \
+            --test-dir lab1/Kubick/build \
+            --output-on-failure
+
+      - name: Coverage Kubick
+        working-directory: lab1/Kubick
+        run: |
+          gcovr \
+            --root . \
+            --object-directory build \
+            --exclude 'tests/.*' \
+            --exclude 'build/.*' \
+            --gcov-ignore-errors=no_working_dir_found \
+            --print-summary \
+            --fail-under-line 90
+
+      - name: Lint Kubick
+        working-directory: lab1/Kubick
+        run: |
+          clang-tidy \
+            kubik.cpp \
+            -p build
+
+
+      - name: Configure Markov
+        run: |
+          cmake \
+            -S lab1/Markov \
+            -B lab1/Markov/build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DENABLE_COVERAGE=ON
+
+      - name: Build Markov
+        run: cmake --build lab1/Markov/build --parallel
+
+      - name: Test Markov
+        run: |
+          ctest \
+            --test-dir lab1/Markov/build \
+            --output-on-failure
+
+      - name: Coverage Markov
+        working-directory: lab1/Markov
+        run: |
+          gcovr \
+            --root . \
+            --object-directory build \
+            --exclude 'tests/.*' \
+            --exclude 'build/_deps/.*' \
+            --print-summary \
+            --fail-under-line 90
+
+      - name: Lint Markov
+        working-directory: lab1/Markov
+        run: |
+          clang-tidy \
+            algos.cpp \
+            -p build
+
+    
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+
+          cp lab1/Kubick/build/tests \
+             release/kubick-tests
+
+          cp lab1/Markov/build/tests \
+             release/algoritms-markov-tests
+
+      - name: Create archive
+        run: |
+          tar -czf lab1-linux.tar.gz -C release .
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab1-linux
+          path: lab1-linux.tar.gz
+
+  release:
+    name: Create GitHub Release
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lab1-linux
+          path: release
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: lab1-${{ github.run_number }}
+          name: Lab 1 ${{ github.run_number }}
+          generate_release_notes: true
+          files: release/lab1-linux.tar.gz
