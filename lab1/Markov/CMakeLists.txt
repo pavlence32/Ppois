@@ -19,7 +19,12 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(Catch2)
 
+add_executable(markov
+    main.cpp
+    algos.cpp
+)
 
+target_include_directories(markov PRIVATE ${CMAKE_SOURCE_DIR})
 add_executable(tests
     algos.cpp
     tests/test.cpp

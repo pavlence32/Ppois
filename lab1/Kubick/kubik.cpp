@@ -89,20 +89,20 @@ void Kubick::get_row(int f,int s,char * out)
     for (int i=0;i<3;i++)
     out[i]=faces[f][s][i];
 }
-void Kubick::set_row(int f,int s,char * out)
+void Kubick::set_row(int f,int s,char * out,bool rev)
 {
     for (int i=0;i<3;i++)
-    faces[f][s][i]=out[i];
+    faces[f][s][i]=out[rev ? 2-i : i];
 }
 void Kubick::get_col(int f,int s,char * out)
 {
     for (int i=0;i<3;i++)
     out[i]=faces[f][i][s];
 }
-void Kubick::set_col(int f,int s,char * out)
+void Kubick::set_col(int f,int s,char * out,bool rev)
 {
     for (int i=0;i<3;i++)
-    faces[f][i][s]=out[i];
+    faces[f][i][s]=out[rev ? 2-i : i];
 }
 void Kubick::rotate_face_matrix(int face)
 {
@@ -122,59 +122,76 @@ void Kubick::rotate_face_matrix(int face)
         }
     }
 }
-void Kubick::shift_neighbours(int face)
+void Kubick::shift_faces0()
 {
     char temp[3], buf[3];
-
+    get_row(2, 0, temp);
+    get_row(5, 0, buf); set_row(2, 0, buf);
+    get_row(4, 0, buf); set_row(5, 0, buf);
+    get_row(3, 0, buf); set_row(4, 0, buf);
+    set_row(3, 0, temp);
+}
+void Kubick::shift_faces1()
+{
+    char temp[3], buf[3];
+    get_row(2, 2, temp);
+    get_row(3, 2, buf); set_row(2, 2, buf);
+    get_row(4, 2, buf); set_row(3, 2, buf);
+    get_row(5, 2, buf); set_row(4, 2, buf);
+    set_row(5, 2, temp);
+}
+void Kubick::shift_faces2()
+{
+    char temp[3], buf[3];
+    get_row(0, 2, temp);
+    get_col(5, 2, buf); set_row(0, 2, buf,true);
+    get_row(1, 0, buf); set_col(5, 2, buf);
+    get_col(3, 0, buf); set_row(1, 0, buf,true);
+    set_col(3, 0, temp);
+}
+void Kubick::shift_faces3()
+{
+    char temp[3], buf[3];
+    get_col(0, 2, temp);
+    get_col(2, 2, buf); set_col(0, 2, buf);
+    get_col(1, 2, buf); set_col(2, 2, buf);
+    get_col(4, 0, buf); set_col(1, 2, buf,true);
+    set_col(4, 0, temp,true);
+}
+void Kubick::shift_faces4()
+{
+    char temp[3], buf[3];
+    get_row(0, 0, temp);
+    get_col(3, 2, buf); set_row(0, 0, buf);
+    get_row(1, 2, buf); set_col(3, 2, buf,true);
+    get_col(5, 0, buf); set_row(1, 2, buf);
+    set_col(5, 0, temp,true);
+}
+void Kubick::shift_faces5()
+{
+    char temp[3], buf[3];
+    get_col(0, 0, temp);
+    get_col(4, 2, buf); set_col(0, 0, buf,true);
+    get_col(1, 0, buf); set_col(4, 2, buf,true);
+    get_col(2, 0, buf); set_col(1, 0, buf);
+    set_col(2, 0, temp);
+}
+void Kubick::shift_neighbours(int face)
+{
     switch (face)
     {
-        case 0: 
-            get_row(2, 0, temp);
-            get_row(5, 0, buf); set_row(2, 0, buf);
-            get_row(4, 0, buf); set_row(5, 0, buf);
-            get_row(3, 0, buf); set_row(4, 0, buf);
-            set_row(3, 0, temp);
-            break;
-
-        case 1: 
-            get_row(2, 2, temp);
-            get_row(3, 2, buf); set_row(2, 2, buf);
-            get_row(4, 2, buf); set_row(3, 2, buf);
-            get_row(5, 2, buf); set_row(4, 2, buf);
-            set_row(5, 2, temp);
-            break;
-
-        case 2: 
-            get_row(0, 2, temp);
-            get_col(5, 2, buf); set_row(0, 2, buf);
-            get_row(1, 0, buf); set_col(5, 2, buf);
-            get_col(3, 0, buf); set_row(1, 0, buf);
-            set_col(3, 0, temp);
-            break;
-
-        case 3: 
-            get_col(0, 2, temp);
-            get_col(2, 2, buf); set_col(0, 2, buf);
-            get_col(1, 2, buf); set_col(2, 2, buf);
-            get_col(4, 0, buf); set_col(1, 2, buf);
-            set_col(4, 0, temp);
-            break;
-
-        case 4: 
-            get_row(0, 0, temp);
-            get_col(3, 2, buf); set_row(0, 0, buf);
-            get_row(1, 2, buf); set_col(3, 2, buf);
-            get_col(5, 0, buf); set_row(1, 2, buf);
-            set_col(5, 0, temp);
-            break;
-
-        case 5:
-            get_col(0, 0, temp);
-            get_col(4, 2, buf); set_col(0, 0, buf);
-            get_col(1, 0, buf); set_col(4, 2, buf);
-            get_col(2, 0, buf); set_col(1, 0, buf);
-            set_col(2, 0, temp);
-            break;
+        case 0: Kubick::shift_faces0();  
+        break;
+        case 1: Kubick::shift_faces1();    
+        break;
+        case 2: Kubick::shift_faces2();  
+        break;
+        case 3: Kubick::shift_faces3(); 
+        break;
+        case 4: Kubick::shift_faces4();  
+        break;
+        case 5:Kubick::shift_faces5(); 
+        break;
     }
 }
 std::ostream& operator<<(std::ostream &out,Kubick &a)

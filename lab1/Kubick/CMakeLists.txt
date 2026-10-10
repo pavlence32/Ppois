@@ -20,7 +20,12 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(Catch2)
+add_executable(kubick
+    main.cpp
+    kubik.cpp
+)
 
+target_include_directories(kubick PRIVATE ${CMAKE_SOURCE_DIR})
 add_executable(tests
     tests/test.cpp
     kubik.cpp
