@@ -9,11 +9,11 @@ __pycache__/
 *.obj
 *.out
 kubik
-lab1/Kubick/html/*
-!lab1/Kubick/html/index.html
-lab1/Markov/html/*
-!lab1/Markov/html/index.html
 latex
 build
 main
 .DS_Store
+.DS_Store
+build/
+*.gcda
+*.gcno.DS_Store
