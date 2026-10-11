@@ -124,57 +124,57 @@ void Kubick::rotate_face_matrix(int face)
 }
 void Kubick::shift_faces0()
 {
-    char temp[3], buf[3];
-    get_row(2, 0, temp);
-    get_row(5, 0, buf); set_row(2, 0, buf);
-    get_row(4, 0, buf); set_row(5, 0, buf);
-    get_row(3, 0, buf); set_row(4, 0, buf);
-    set_row(3, 0, temp);
+    char saved[3], strip[3];
+    get_row(2, 0, saved);
+    get_row(5, 0, strip); set_row(2, 0, strip);
+    get_row(4, 0, strip); set_row(5, 0, strip);
+    get_row(3, 0, strip); set_row(4, 0, strip);
+    set_row(3, 0, saved);
 }
 void Kubick::shift_faces1()
 {
-    char temp[3], buf[3];
-    get_row(2, 2, temp);
-    get_row(3, 2, buf); set_row(2, 2, buf);
-    get_row(4, 2, buf); set_row(3, 2, buf);
-    get_row(5, 2, buf); set_row(4, 2, buf);
-    set_row(5, 2, temp);
+    char saved[3], strip[3];
+    get_row(2, 2, saved);
+    get_row(3, 2, strip); set_row(2, 2, strip);
+    get_row(4, 2, strip); set_row(3, 2, strip);
+    get_row(5, 2, strip); set_row(4, 2, strip);
+    set_row(5, 2, saved);
 }
 void Kubick::shift_faces2()
 {
-    char temp[3], buf[3];
-    get_row(0, 2, temp);
-    get_col(5, 2, buf); set_row(0, 2, buf,true);
-    get_row(1, 0, buf); set_col(5, 2, buf);
-    get_col(3, 0, buf); set_row(1, 0, buf,true);
-    set_col(3, 0, temp);
+    char saved[3], strip[3];
+    get_row(0, 2, saved);
+    get_col(5, 2, strip); set_row(0, 2, strip,true);
+    get_row(1, 0, strip); set_col(5, 2, strip);
+    get_col(3, 0, strip); set_row(1, 0, strip,true);
+    set_col(3, 0, saved);
 }
 void Kubick::shift_faces3()
 {
-    char temp[3], buf[3];
-    get_col(0, 2, temp);
-    get_col(2, 2, buf); set_col(0, 2, buf);
-    get_col(1, 2, buf); set_col(2, 2, buf);
-    get_col(4, 0, buf); set_col(1, 2, buf,true);
-    set_col(4, 0, temp,true);
+    char saved[3], strip[3];
+    get_col(0, 2, saved);
+    get_col(2, 2, strip); set_col(0, 2, strip);
+    get_col(1, 2, strip); set_col(2, 2, strip);
+    get_col(4, 0, strip); set_col(1, 2, strip,true);
+    set_col(4, 0, saved,true);
 }
 void Kubick::shift_faces4()
 {
-    char temp[3], buf[3];
-    get_row(0, 0, temp);
-    get_col(3, 2, buf); set_row(0, 0, buf);
-    get_row(1, 2, buf); set_col(3, 2, buf,true);
-    get_col(5, 0, buf); set_row(1, 2, buf);
-    set_col(5, 0, temp,true);
+    char saved[3], strip[3];
+    get_row(0, 0, saved);
+    get_col(3, 2, strip); set_row(0, 0, strip);
+    get_row(1, 2, strip); set_col(3, 2, strip,true);
+    get_col(5, 0, strip); set_row(1, 2, strip);
+    set_col(5, 0, saved,true);
 }
 void Kubick::shift_faces5()
 {
-    char temp[3], buf[3];
-    get_col(0, 0, temp);
-    get_col(4, 2, buf); set_col(0, 0, buf,true);
-    get_col(1, 0, buf); set_col(4, 2, buf,true);
-    get_col(2, 0, buf); set_col(1, 0, buf);
-    set_col(2, 0, temp);
+    char saved[3], strip[3];
+    get_col(0, 0, saved);
+    get_col(4, 2, strip); set_col(0, 0, strip,true);
+    get_col(1, 0, strip); set_col(4, 2, strip,true);
+    get_col(2, 0, strip); set_col(1, 0, strip);
+    set_col(2, 0, saved);
 }
 void Kubick::shift_neighbours(int face)
 {

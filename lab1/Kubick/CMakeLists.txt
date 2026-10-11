@@ -6,11 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(ENABLE_COVERAGE "Build with coverage instrumentation" OFF)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    add_compile_options(--coverage -g -O0)
-    add_link_options(--coverage)
-endif()
-
 include(FetchContent)
 
 FetchContent_Declare(
@@ -20,19 +15,27 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(Catch2)
+
 add_executable(kubick
     main.cpp
     kubik.cpp
 )
-
 target_include_directories(kubick PRIVATE ${CMAKE_SOURCE_DIR})
+
 add_executable(tests
     tests/test.cpp
     kubik.cpp
 )
-
 target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR})
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
+
+# Покрытие только для наших целей, не для Catch2
+if(ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    foreach(target kubick tests)
+        target_compile_options(${target} PRIVATE --coverage -g -O0)
+        target_link_options(${target} PRIVATE --coverage)
+    endforeach()
+endif()
 
 enable_testing()
 add_test(NAME unit_tests COMMAND tests)

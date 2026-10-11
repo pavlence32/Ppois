@@ -15,4 +15,5 @@ lab1/Markov/html/*
 !lab1/Markov/html/index.html
 latex
 build
-
+main
+.DS_Store
