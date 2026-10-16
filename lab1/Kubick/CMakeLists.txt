@@ -29,7 +29,7 @@ add_executable(tests
 target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR})
 target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
 
-# Покрытие только для наших целей, не для Catch2
+
 if(ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     foreach(target kubick tests)
         target_compile_options(${target} PRIVATE --coverage -g -O0)

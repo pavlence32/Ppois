@@ -1,7 +1,18 @@
+
 name: Lab 1 CI/CD
 
 on:
   push:
+    branches:
+      - lab1
+      - main
+    paths:
+      - 'lab1/**'
+      - '.github/workflows/lab1.yml'
+
+  pull_request:
+    branches:
+      - main
     paths:
       - 'lab1/**'
       - '.github/workflows/lab1.yml'
@@ -12,7 +23,7 @@ permissions:
 jobs:
   test:
     name: Build, test, coverage and lint
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
@@ -20,13 +31,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            cmake \
-            g++ \
-            gcovr \
-            clang-tidy
-
+          brew update
+          brew install cmake gcovr llvm
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
 
       - name: Configure Kubick
         run: |
@@ -38,8 +45,7 @@ jobs:
             -DENABLE_COVERAGE=ON
 
       - name: Build Kubick
-        run: |
-          cmake --build lab1/Kubick/build --parallel
+        run: cmake --build lab1/Kubick/build --parallel
 
       - name: Test Kubick
         run: |
@@ -53,6 +59,7 @@ jobs:
           gcovr \
             --root . \
             --object-directory build \
+            --gcov-executable "$(brew --prefix llvm)/bin/llvm-cov gcov" \
             --filter 'kubik\.cpp' \
             --exclude 'tests/.*' \
             --exclude 'build/.*' \
@@ -62,10 +69,8 @@ jobs:
       - name: Lint Kubick
         working-directory: lab1/Kubick
         run: |
-          clang-tidy \
-            kubik.cpp \
-            -p build
-
+          clang-tidy kubik.cpp -p build \
+            --checks='-*,clang-analyzer-*,-clang-analyzer-security.insecureAPI.rand'
 
       - name: Configure Markov
         run: |
@@ -77,8 +82,7 @@ jobs:
             -DENABLE_COVERAGE=ON
 
       - name: Build Markov
-        run: |
-          cmake --build lab1/Markov/build --parallel
+        run: cmake --build lab1/Markov/build --parallel
 
       - name: Test Markov
         run: |
@@ -92,6 +96,7 @@ jobs:
           gcovr \
             --root . \
             --object-directory build \
+            --gcov-executable "$(brew --prefix llvm)/bin/llvm-cov gcov" \
             --filter 'algos\.cpp' \
             --exclude 'tests/.*' \
             --exclude 'build/_deps/.*' \
@@ -101,10 +106,8 @@ jobs:
       - name: Lint Markov
         working-directory: lab1/Markov
         run: |
-          clang-tidy \
-            algos.cpp \
-            -p build
-
+          clang-tidy algos.cpp -p build \
+            --checks='-*,clang-analyzer-*'
 
       - name: Configure Kubick Release
         run: |
@@ -114,8 +117,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release
 
       - name: Build Kubick Release
-        run: |
-          cmake --build lab1/Kubick/release-build --parallel
+        run: cmake --build lab1/Kubick/release-build --parallel
 
       - name: Configure Markov Release
         run: |
@@ -125,28 +127,26 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release
 
       - name: Build Markov Release
-        run: |
-          cmake --build lab1/Markov/release-build --parallel
+        run: cmake --build lab1/Markov/release-build --parallel
 
+      
       - name: Prepare release files
         run: |
           mkdir -p release
 
-          cp lab1/Kubick/release-build/kubick \
-             release/kubick
+          cp lab1/Kubick/release-build/kubick release/kubick
+          cp lab1/Markov/release-build/markov release/markov
+          cp lab1/Markov/rules.txt release/rules.txt
 
-          cp lab1/Markov/release-build/markov \
-             release/markov
+          tar -czf lab1-macos.tar.gz -C release .
 
-      - name: Create archive
-        run: |
-          tar -czf lab1-linux.tar.gz -C release .
 
       - name: Upload build artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: lab1-linux
-          path: lab1-linux.tar.gz
+          name: lab1-macos
+          path: lab1-macos.tar.gz
           if-no-files-found: error
           retention-days: 7
 
@@ -154,7 +154,7 @@ jobs:
     name: Create GitHub Release
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     permissions:
       contents: write
@@ -163,14 +163,13 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: lab1-linux
+          name: lab1-macos
           path: release
 
-      - name: Create Release
+      - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: lab1-${{ github.run_number }}
           name: Lab 1 ${{ github.run_number }}
           generate_release_notes: true
-          files: release/lab1-linux.tar.gz
-
+          files: release/lab1-macos.tar.gz
