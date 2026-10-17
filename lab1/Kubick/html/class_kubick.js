@@ -1,0 +1,25 @@
+var class_kubick =
+[
+    [ "Kubick", "class_kubick.html#af2b7a5226072b43336ff321c2e60b974", null ],
+    [ "checkcolorplace", "class_kubick.html#ab2308356f632c007eef1668201fd3389", null ],
+    [ "fill_place", "class_kubick.html#a2eeccbc8ca4d56ffa737919753d588bd", null ],
+    [ "get_col", "class_kubick.html#a5d92e29aa3cc8b89f83c90bb322750a5", null ],
+    [ "get_row", "class_kubick.html#a5ec43e65ebd69703aed0fedaf0915fde", null ],
+    [ "load_color", "class_kubick.html#a53deca8ce332832968bb5cf8434c951b", null ],
+    [ "random_place", "class_kubick.html#af5f5fbcac74412d62f2a02323c8a14f4", null ],
+    [ "rotate_face_matrix", "class_kubick.html#a0167966d1eb3588bdce869149fcbc066", null ],
+    [ "set_col", "class_kubick.html#a481e8b078dc34fcf61e31d24a36b9f3b", null ],
+    [ "set_row", "class_kubick.html#a17ff77a300219d019d777c280736ba3e", null ],
+    [ "shift_faces0", "class_kubick.html#afd9cd0f4ee0ed36a74edb8856ef22f2c", null ],
+    [ "shift_faces1", "class_kubick.html#a0316023b6b3d5269d65002611ac94de3", null ],
+    [ "shift_faces2", "class_kubick.html#ae666fddc51bb6134682d39657a23cfc0", null ],
+    [ "shift_faces3", "class_kubick.html#ae81dcfbe9d1e26a4bc68a666fd5d8105", null ],
+    [ "shift_faces4", "class_kubick.html#a9bca88a22ad9943bd581373ab8744d31", null ],
+    [ "shift_faces5", "class_kubick.html#a5e934ecce71159a26a1f25b37a904898", null ],
+    [ "shift_neighbours", "class_kubick.html#af5838c930a42004af5ed81a816a8b9d8", null ],
+    [ "turn", "class_kubick.html#a7b84320747377ae0f9a7fc794811551f", null ],
+    [ "operator!=", "class_kubick.html#a6221c72d39396da479561af19349c52e", null ],
+    [ "operator<<", "class_kubick.html#a0b816002cd707e47f811b20b698e1c0f", null ],
+    [ "operator==", "class_kubick.html#a9f373983cf47d6ccc85c417ad7e59508", null ],
+    [ "faces", "class_kubick.html#a07937cda5a9b2c57ed5a1fa64c184798", null ]
+];

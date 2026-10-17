@@ -1,0 +1,41 @@
+cmake_minimum_required(VERSION 3.14)
+project(Kubick CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+option(ENABLE_COVERAGE "Build with coverage instrumentation" OFF)
+
+include(FetchContent)
+
+FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG v3.5.2
+)
+
+FetchContent_MakeAvailable(Catch2)
+
+add_executable(kubick
+    main.cpp
+    kubik.cpp
+)
+target_include_directories(kubick PRIVATE ${CMAKE_SOURCE_DIR})
+
+add_executable(tests
+    tests/test.cpp
+    kubik.cpp
+)
+target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR})
+target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
+
+
+if(ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    foreach(target kubick tests)
+        target_compile_options(${target} PRIVATE --coverage -g -O0)
+        target_link_options(${target} PRIVATE --coverage)
+    endforeach()
+endif()
+
+enable_testing()
+add_test(NAME unit_tests COMMAND tests)

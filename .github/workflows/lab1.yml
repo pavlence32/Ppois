@@ -1,0 +1,175 @@
+
+name: Lab 1 CI/CD
+
+on:
+  push:
+    branches:
+      - lab1
+      - main
+    paths:
+      - 'lab1/**'
+      - '.github/workflows/lab1.yml'
+
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'lab1/**'
+      - '.github/workflows/lab1.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build, test, coverage and lint
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install cmake gcovr llvm
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+
+      # Kubick: Debug
+      - name: Configure Kubick
+        run: |
+          cmake \
+            -S lab1/Kubick \
+            -B lab1/Kubick/build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DENABLE_COVERAGE=ON
+
+      - name: Build Kubick
+        run: cmake --build lab1/Kubick/build --parallel
+
+      - name: Test Kubick
+        run: |
+          ctest \
+            --test-dir lab1/Kubick/build \
+            --output-on-failure
+
+      - name: Coverage Kubick
+        working-directory: lab1/Kubick
+        run: |
+          gcovr \
+            --root . \
+            --object-directory build \
+            --gcov-executable "$(brew --prefix llvm)/bin/llvm-cov gcov" \
+            --filter 'kubik\.cpp' \
+            --exclude 'tests/.*' \
+            --exclude 'build/.*' \
+            --print-summary \
+            --fail-under-line 91
+
+      - name: Lint Kubick
+        working-directory: lab1/Kubick
+        run: |
+          clang-tidy kubik.cpp -p build \
+            --checks='-*,clang-analyzer-*,-clang-analyzer-security.insecureAPI.rand'
+
+      # Markov: Debug
+      - name: Configure Markov
+        run: |
+          cmake \
+            -S lab1/Markov \
+            -B lab1/Markov/build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DENABLE_COVERAGE=ON
+
+      - name: Build Markov
+        run: cmake --build lab1/Markov/build --parallel
+
+      - name: Test Markov
+        run: |
+          ctest \
+            --test-dir lab1/Markov/build \
+            --output-on-failure
+
+      - name: Coverage Markov
+        working-directory: lab1/Markov
+        run: |
+          gcovr \
+            --root . \
+            --object-directory build \
+            --gcov-executable "$(brew --prefix llvm)/bin/llvm-cov gcov" \
+            --filter 'algos\.cpp' \
+            --exclude 'tests/.*' \
+            --exclude 'build/_deps/.*' \
+            --print-summary \
+            --fail-under-line 91
+
+      - name: Lint Markov
+        working-directory: lab1/Markov
+        run: |
+          clang-tidy algos.cpp -p build \
+            --checks='-*,clang-analyzer-*'
+
+      # Release builds for macOS
+      - name: Configure Kubick Release
+        run: |
+          cmake \
+            -S lab1/Kubick \
+            -B lab1/Kubick/release-build \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Kubick Release
+        run: cmake --build lab1/Kubick/release-build --parallel
+
+      - name: Configure Markov Release
+        run: |
+          cmake \
+            -S lab1/Markov \
+            -B lab1/Markov/release-build \
+            -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build Markov Release
+        run: cmake --build lab1/Markov/release-build --parallel
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+
+          cp lab1/Kubick/release-build/kubick release/kubick
+          cp lab1/Markov/release-build/markov release/markov
+
+          tar -czf lab1-macos.tar.gz -C release .
+
+      - name: Upload build artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab1-macos
+          path: lab1-macos.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Create GitHub Release
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: macos-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lab1-macos
+          path: release
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: lab1-${{ github.run_number }}
+          name: Lab 1 ${{ github.run_number }}
+          generate_release_notes: true
+          files: release/lab1-macos.tar.gz

@@ -8,5 +8,12 @@ __pycache__/
 *.o
 *.obj
 *.out
-
-
+kubik
+latex
+build
+main
+.DS_Store
+.DS_Store
+build/
+*.gcda
+*.gcno.DS_Store
