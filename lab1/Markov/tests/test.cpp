@@ -1,10 +1,22 @@
-
 #include <catch2/catch_test_macros.hpp>
 
 #include "algos.h"
 
-#include <fstream>
+#include <iostream>
+#include <sstream>
 #include <string>
+#include <vector>
+
+
+static Markov make(const std::string &word, std::vector<std::string> lines)
+{
+    std::vector<Rule> rules;
+    for (std::string &l : lines)
+    {
+        rules.push_back(Parser::translate(l));
+    }
+    return Markov(word, rules);
+}
 
 
 TEST_CASE("Rule stores left and right parts correctly")
@@ -20,17 +32,13 @@ TEST_CASE("Rule can be final")
 {
     Rule rule("B", "A", true);
 
-    REQUIRE(rule.Get_right() == "B");
-    REQUIRE(rule.Get_left() == "A");
     REQUIRE(rule.Is_final());
 }
 
 
-
-TEST_CASE("Parser translates ordinary rule")
+TEST_CASE("translate: ordinary rule")
 {
     std::string line = "A->B";
-
     Rule rule = Parser::translate(line);
 
     REQUIRE(rule.Get_left() == "A");
@@ -38,10 +46,9 @@ TEST_CASE("Parser translates ordinary rule")
     REQUIRE_FALSE(rule.Is_final());
 }
 
-TEST_CASE("Parser translates final rule")
+TEST_CASE("translate: final rule")
 {
     std::string line = "A->.B";
-
     Rule rule = Parser::translate(line);
 
     REQUIRE(rule.Get_left() == "A");
@@ -49,21 +56,44 @@ TEST_CASE("Parser translates final rule")
     REQUIRE(rule.Is_final());
 }
 
-
-TEST_CASE("Parser reads rules from file")
+TEST_CASE("translate: empty right part (deletion)")
 {
-    const std::string filename = "test_rules.txt";
+    std::string line = "a->";
+    Rule rule = Parser::translate(line);
 
-    {
-        std::ofstream out(filename);
-        REQUIRE(out.is_open());
+    REQUIRE(rule.Get_left() == "a");
+    REQUIRE(rule.Get_right() == "");
+    REQUIRE_FALSE(rule.Is_final());
+}
 
-        out << "A->B\n";
-        out << "BC->D\n";
-        out << "D->.E\n";
-    }
+TEST_CASE("translate: empty left part")
+{
+    std::string line = "->X";
+    Rule rule = Parser::translate(line);
 
-    std::vector<Rule> rules = Parser::parser(filename);
+    REQUIRE(rule.Get_left() == "");
+    REQUIRE(rule.Get_right() == "X");
+}
+
+TEST_CASE("translate: multi-character parts")
+{
+    std::string line = "abc->.xy";
+    Rule rule = Parser::translate(line);
+
+    REQUIRE(rule.Get_left() == "abc");
+    REQUIRE(rule.Get_right() == "xy");
+    REQUIRE(rule.Is_final());
+}
+
+
+TEST_CASE("parser reads rules from cin until empty line")
+{
+    std::istringstream in("A->B\nBC->D\nD->.E\n\nignored->x\n");
+    std::streambuf *old = std::cin.rdbuf(in.rdbuf());
+
+    std::vector<Rule> rules = Parser::parser();
+
+    std::cin.rdbuf(old);
 
     REQUIRE(rules.size() == 3);
 
@@ -73,145 +103,148 @@ TEST_CASE("Parser reads rules from file")
 
     REQUIRE(rules[1].Get_left() == "BC");
     REQUIRE(rules[1].Get_right() == "D");
-    REQUIRE_FALSE(rules[1].Is_final());
 
     REQUIRE(rules[2].Get_left() == "D");
     REQUIRE(rules[2].Get_right() == "E");
     REQUIRE(rules[2].Is_final());
-
-    std::remove(filename.c_str());
 }
 
-TEST_CASE("Parser returns empty vector for nonexistent file")
+TEST_CASE("parser returns empty vector on immediate empty line")
 {
-    const std::string filename = "file_that_does_not_exist.txt";
+    std::istringstream in("\n");
+    std::streambuf *old = std::cin.rdbuf(in.rdbuf());
 
-    std::vector<Rule> rules = Parser::parser(filename);
+    std::vector<Rule> rules = Parser::parser();
+
+    std::cin.rdbuf(old);
 
     REQUIRE(rules.empty());
 }
 
+// ---------- Markov::step ----------
 
-
-TEST_CASE("Markov step replaces first matching substring")
+TEST_CASE("step replaces first matching substring")
 {
-    const std::string filename = "test_rules.txt";
+    Markov m = make("zzabyy", {"ab->X"});
 
-    {
-        std::ofstream out(filename);
-        out << "ab->X\n";
-    }
-
-    Markov markov("zzabyy", filename);
-
-    REQUIRE(markov.get_result() == "zzabyy");
-
-    bool can_continue = markov.step();
-
-    REQUIRE(can_continue);
-    REQUIRE(markov.get_result() == "zzXyy");
-
-    std::remove(filename.c_str());
+    REQUIRE(m.get_result() == "zzabyy");
+    REQUIRE(m.step());
+    REQUIRE(m.get_result() == "zzXyy");
 }
 
-TEST_CASE("Markov step returns false when no rule matches")
+TEST_CASE("step replaces only the first occurrence")
 {
-    const std::string filename = "test_rules.txt";
+    Markov m = make("aa", {"a->b"});
 
-    {
-        std::ofstream out(filename);
-        out << "abc->X\n";
-    }
-
-    Markov markov("hello", filename);
-
-    REQUIRE_FALSE(markov.step());
-    REQUIRE(markov.get_result() == "hello");
-
-    std::remove(filename.c_str());
+    REQUIRE(m.step());
+    REQUIRE(m.get_result() == "ba");
 }
 
-TEST_CASE("Markov stops after final rule")
+TEST_CASE("step returns false when no rule matches")
 {
-    const std::string filename = "test_rules.txt";
+    Markov m = make("hello", {"abc->X"});
 
-    {
-        std::ofstream out(filename);
-        out << "A->.B\n";
-    }
-
-    Markov markov("AAA", filename);
-
-    bool can_continue = markov.step();
-
-    REQUIRE_FALSE(can_continue);
-    REQUIRE(markov.get_result() == "BAA");
-
-    std::remove(filename.c_str());
+    REQUIRE_FALSE(m.step());
+    REQUIRE(m.get_result() == "hello");
 }
 
-TEST_CASE("Markov uses first applicable rule")
+TEST_CASE("step with no rules does nothing")
 {
-    const std::string filename = "test_rules.txt";
+    Markov m = make("abc", {});
 
-    {
-        std::ofstream out(filename);
-        out << "A->B\n";
-        out << "B->C\n";
-    }
-
-    Markov markov("A", filename);
-
-    REQUIRE(markov.step());
-    REQUIRE(markov.get_result() == "B");
-
-    std::remove(filename.c_str());
+    REQUIRE_FALSE(m.step());
+    REQUIRE(m.get_result() == "abc");
 }
 
-TEST_CASE("Markov run applies rules until algorithm stops")
+TEST_CASE("step stops after final rule")
 {
-    const std::string filename = "test_rules.txt";
+    Markov m = make("AAA", {"A->.B"});
 
-    {
-        std::ofstream out(filename);
-        out << "A->B\n";
-        out << "B->C\n";
-        out << "C->.D\n";
-    }
-
-    Markov markov("A", filename);
-
-    markov.run();
-
-    REQUIRE(markov.get_result() == "D");
-
-    std::remove(filename.c_str());
+    REQUIRE_FALSE(m.step());
+    REQUIRE(m.get_result() == "BAA");
 }
 
-TEST_CASE("Markov handles multiple replacements")
+TEST_CASE("step uses the first applicable rule (priority by order)")
 {
-    std::ofstream file("test_rules.txt");
-    file << "A->B\n";
-    file << "B->C\n";
-    file.close();
+    Markov m = make("ab", {"ab->X", "a->Y"});
 
-    Markov markov("AA", "test_rules.txt");
-
-    REQUIRE(markov.step() == true);
-    REQUIRE(markov.get_result() == "BA");
-
-    REQUIRE(markov.step() == true);
-    REQUIRE(markov.get_result() == "BB");
-
-    REQUIRE(markov.step() == true);
-    REQUIRE(markov.get_result() == "CB");
-
-    REQUIRE(markov.step() == true);
-    REQUIRE(markov.get_result() == "CC");
-
-    REQUIRE(markov.step() == false);
-    REQUIRE(markov.get_result() == "CC");
-
-    std::remove("test_rules.txt");
+    REQUIRE(m.step());
+    REQUIRE(m.get_result() == "X");
 }
 
+TEST_CASE("step applies later rule if earlier does not match")
+{
+    Markov m = make("ab", {"zz->X", "a->Y"});
+
+    REQUIRE(m.step());
+    REQUIRE(m.get_result() == "Yb");
+}
+
+TEST_CASE("step with empty left part inserts at the beginning")
+{
+    Markov m = make("abc", {"->.X"});
+
+    REQUIRE_FALSE(m.step());
+    REQUIRE(m.get_result() == "Xabc");
+}
+
+TEST_CASE("step by step: A->B, B->C on AA")
+{
+    Markov m = make("AA", {"A->B", "B->C"});
+
+    REQUIRE(m.step());
+    REQUIRE(m.get_result() == "BA");
+
+    REQUIRE(m.step());
+    REQUIRE(m.get_result() == "BB");
+
+    REQUIRE(m.step());
+    REQUIRE(m.get_result() == "CB");
+
+    REQUIRE(m.step());
+    REQUIRE(m.get_result() == "CC");
+
+    REQUIRE_FALSE(m.step());
+    REQUIRE(m.get_result() == "CC");
+}
+
+
+TEST_CASE("run: chain ending with final rule")
+{
+    Markov m = make("A", {"A->B", "B->C", "C->.D"});
+
+    m.run();
+    REQUIRE(m.get_result() == "D");
+}
+
+TEST_CASE("run: sorting b and a (ba->ab)")
+{
+    Markov m = make("bbaa", {"ba->ab"});
+
+    m.run();
+    REQUIRE(m.get_result() == "aabb");
+}
+
+TEST_CASE("run: deleting all occurrences of a symbol")
+{
+    Markov m = make("banana", {"a->"});
+
+    m.run();
+    REQUIRE(m.get_result() == "bnn");
+}
+
+TEST_CASE("run: nothing to apply leaves word unchanged")
+{
+    Markov m = make("hello", {"xyz->Q"});
+
+    m.run();
+    REQUIRE(m.get_result() == "hello");
+}
+
+TEST_CASE("run: final rule stops even if other rules still match")
+{
+    Markov m = make("AB", {"A->.X", "B->Y"});
+
+    m.run();
+    REQUIRE(m.get_result() == "XB");
+}
