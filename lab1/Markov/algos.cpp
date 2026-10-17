@@ -19,41 +19,33 @@ bool Rule::Is_final()
 }
 Rule Parser::translate(std::string &s)
 {
-     std::string right, left;
-    bool is_final = false;
-    int len = -1;   
+     size_t pos = s.find("->");
 
-    for (int i = 0; i < s.length() - 1; i++)  
+    std::string left = s.substr(0, pos);
+    std::string right = s.substr(pos + 2);
+    bool is_final = (right[0] == '.');  
+
+    if (is_final)
     {
-        if (s[i] == '-' && s[i + 1] == '>')    
-        {
-            len = i;
-            if (s[i + 2] == '.')                
-            {
-                is_final = true;
-            }
-            break;
-        }
+        right.erase(0, 1);
     }
-
-    left = s.substr(0, len);
-    right = s.substr(len + 2 + (is_final ? 1 : 0));   
 
     return Rule(right, left, is_final);
 }
-std::vector<Rule> Parser::parser(const std::string &filename)
+ std::vector<Rule> Parser::parser()
 {
-    std::vector<Rule> ruls;
     std::string line;
-    std::ifstream in(filename);
-    if(in.is_open())
-    {
-        while(std::getline(in,line))
-        ruls.push_back(Parser::translate(line));
+    std::vector<Rule> a;
+    int choose;
+    while(true){
+    std::cout<<"Enter rule:"<<std::endl;
+    std::getline(std::cin,line);
+        if (line.empty()) { 
+        break; 
     }
-    in.close();
-    return ruls;
-
+    a.push_back(Parser::translate(line));
+    }
+return a;
 }
 std :: string Markov::get_result()
 {
@@ -61,24 +53,24 @@ std :: string Markov::get_result()
 }
 bool Markov::step()
 {
-    for (int i = 0; i < rules.size(); i++)
+  for (size_t i = 0; i < rules.size(); i++)
     {
-        int pos = word.find(rules[i].Get_left());
-        if (pos >=0)
+        size_t pos = word.find(rules[i].Get_left());
+        if (pos != std::string::npos)
         {
             word.replace(pos, rules[i].Get_left().length(), rules[i].Get_right());
-            return !rules[i].Is_final();  
+            return !rules[i].Is_final();
         }
     }
-    return false;  
+    return false;
 }
 void Markov::run()
 {
     while(step()){};
 }
-Markov::Markov(std::string a,const std::string & filename)
+Markov::Markov(std::string a,std::vector<Rule>r)
 {
     word=a;
-    rules=Parser::parser(filename);
+    rules=r;
 
 }

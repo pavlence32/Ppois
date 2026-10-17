@@ -67,7 +67,7 @@ class Parser
      * @param filename Путь к файлу с правилами
      * @return Список правил в порядке их следования в файле
      */
-    static std::vector<Rule> parser(const std::string &filename);
+    static  std::vector<Rule> parser();
 };
  
 /**
@@ -88,7 +88,7 @@ class Markov
      * @param a Начальное слово
      * @param filename Путь к файлу с правилами
      */
-    Markov(std::string a,const std::string & filename);
+    Markov(std::string a,std::vector<Rule>r);
  
     /**
      * @brief Возвращает текущее слово
