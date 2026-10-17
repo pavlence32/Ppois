@@ -119,8 +119,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('class_markov.h
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Открытые члены</h2></td></tr>
-<tr class="memitem:aed0527b82d8330ce3aeff46380f977a2" id="r_aed0527b82d8330ce3aeff46380f977a2"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#aed0527b82d8330ce3aeff46380f977a2">Markov</a> (std::string a, const std::string &amp;filename)</td></tr>
-<tr class="memdesc:aed0527b82d8330ce3aeff46380f977a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Конструктор алгоритма  <br /></td></tr>
+<tr class="memitem:a0eefb0ff746b7937426eb66e836974a3" id="r_a0eefb0ff746b7937426eb66e836974a3"><td class="memItemLeft">&#160;</td><td class="memItemRight"><a class="el" href="#a0eefb0ff746b7937426eb66e836974a3">Markov</a> (std::string a, std::vector&lt; <a class="el" href="class_rule.html">Rule</a> &gt; r)</td></tr>
+<tr class="memdesc:a0eefb0ff746b7937426eb66e836974a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Конструктор алгоритма  <br /></td></tr>
 <tr class="memitem:afc1561bd626a8316a3a8bdfa183422e0" id="r_afc1561bd626a8316a3a8bdfa183422e0"><td class="memItemLeft">std::string&#160;</td><td class="memItemRight"><a class="el" href="#afc1561bd626a8316a3a8bdfa183422e0">get_result</a> ()</td></tr>
 <tr class="memdesc:afc1561bd626a8316a3a8bdfa183422e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Возвращает текущее слово  <br /></td></tr>
 <tr class="memitem:a78b7d7db94e02315dd9f340d491b14c0" id="r_a78b7d7db94e02315dd9f340d491b14c0"><td class="memItemLeft">bool&#160;</td><td class="memItemRight"><a class="el" href="#a78b7d7db94e02315dd9f340d491b14c0">step</a> ()</td></tr>
@@ -139,8 +139,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('class_markov.h
 <div class="textblock"><p>Нормальный алгоритм Маркова </p>
 <p>Хранит текущее слово и список правил, последовательно применяет правила к слову до остановки алгоритма. </p>
 </div><a name="doc-constructors" id="doc-constructors"></a><h2 id="header-doc-constructors" class="groupheader">Конструктор(ы)</h2>
-<a id="aed0527b82d8330ce3aeff46380f977a2" name="aed0527b82d8330ce3aeff46380f977a2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aed0527b82d8330ce3aeff46380f977a2">&#9670;&#160;</a></span>Markov()</h2>
+<a id="a0eefb0ff746b7937426eb66e836974a3" name="a0eefb0ff746b7937426eb66e836974a3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0eefb0ff746b7937426eb66e836974a3">&#9670;&#160;</a></span>Markov()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('class_markov.h
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const std::string &amp;</td>          <td class="paramname"><span class="paramname"><em>filename</em></span>&#160;)</td>
+          <td class="paramtype">std::vector&lt; <a class="el" href="class_rule.html">Rule</a> &gt;</td>          <td class="paramname"><span class="paramname"><em>r</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('class_markov.h
 <dl class="params"><dt>Аргументы</dt><dd>
   <table class="params">
     <tr><td class="paramname">a</td><td>Начальное слово </td></tr>
-    <tr><td class="paramname">filename</td><td>Путь к файлу с правилами </td></tr>
+    <tr><td class="paramname">r</td><td>Список правил подстановки в порядке приоритета </td></tr>
   </table>
   </dd>
 </dl>

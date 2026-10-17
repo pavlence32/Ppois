@@ -121,15 +121,15 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('class_parser.h
 Открытые статические члены</h2></td></tr>
 <tr class="memitem:a5dc3d94bf97c0cc4c12a9faebf732951" id="r_a5dc3d94bf97c0cc4c12a9faebf732951"><td class="memItemLeft">static <a class="el" href="class_rule.html">Rule</a>&#160;</td><td class="memItemRight"><a class="el" href="#a5dc3d94bf97c0cc4c12a9faebf732951">translate</a> (std::string &amp;s)</td></tr>
 <tr class="memdesc:a5dc3d94bf97c0cc4c12a9faebf732951"><td class="mdescLeft">&#160;</td><td class="mdescRight">Преобразует строку в правило  <br /></td></tr>
-<tr class="memitem:a4cbe25e9b162b6edf10481b4c04a7527" id="r_a4cbe25e9b162b6edf10481b4c04a7527"><td class="memItemLeft">static std::vector&lt; <a class="el" href="class_rule.html">Rule</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a4cbe25e9b162b6edf10481b4c04a7527">parser</a> (const std::string &amp;filename)</td></tr>
-<tr class="memdesc:a4cbe25e9b162b6edf10481b4c04a7527"><td class="mdescLeft">&#160;</td><td class="mdescRight">Считывает все правила из файла  <br /></td></tr>
+<tr class="memitem:a5448ccf8b6ab994db567cbf3a3d8c75b" id="r_a5448ccf8b6ab994db567cbf3a3d8c75b"><td class="memItemLeft">static std::vector&lt; <a class="el" href="class_rule.html">Rule</a> &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a5448ccf8b6ab994db567cbf3a3d8c75b">parser</a> ()</td></tr>
+<tr class="memdesc:a5448ccf8b6ab994db567cbf3a3d8c75b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Считывает правила из стандартного ввода  <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Подробное описание</h2>
 <div class="textblock"><p>Разбор правил алгоритма Маркова </p>
-<p>Содержит статические методы для разбора одной строки и для чтения всех правил из файла. </p>
+<p>Содержит статические методы для разбора одной строки и для чтения всех правил из стандартного ввода. </p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Методы</h2>
-<a id="a4cbe25e9b162b6edf10481b4c04a7527" name="a4cbe25e9b162b6edf10481b4c04a7527"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4cbe25e9b162b6edf10481b4c04a7527">&#9670;&#160;</a></span>parser()</h2>
+<a id="a5448ccf8b6ab994db567cbf3a3d8c75b" name="a5448ccf8b6ab994db567cbf3a3d8c75b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5448ccf8b6ab994db567cbf3a3d8c75b">&#9670;&#160;</a></span>parser()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('class_parser.h
         <tr>
           <td class="memname">std::vector&lt; <a class="el" href="class_rule.html">Rule</a> &gt; Parser::parser </td>
           <td>(</td>
-          <td class="paramtype">const std::string &amp;</td>          <td class="paramname"><span class="paramname"><em>filename</em></span></td><td>)</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -151,14 +151,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('class_parser.h
 </table>
 </div><div class="memdoc">
 
-<p>Считывает все правила из файла </p>
-<dl class="params"><dt>Аргументы</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">filename</td><td>Путь к файлу с правилами </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Возвращает</dt><dd>Список правил в порядке их следования в файле </dd></dl>
+<p>Считывает правила из стандартного ввода </p>
+<p>Каждое правило вводится на отдельной строке, ввод завершается пустой строкой.</p>
+<dl class="section return"><dt>Возвращает</dt><dd>Список правил в порядке ввода </dd></dl>
 
 </div>
 </div>
@@ -186,6 +181,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('class_parser.h
 </div><div class="memdoc">
 
 <p>Преобразует строку в правило </p>
+<p>Формат строки: "левая-&gt;правая" для обычного правила и "левая-&gt;.правая" для заключительного. Строка должна содержать "-&gt;".</p>
 <dl class="params"><dt>Аргументы</dt><dd>
   <table class="params">
     <tr><td class="paramname">s</td><td>Строка с описанием правила </td></tr>
