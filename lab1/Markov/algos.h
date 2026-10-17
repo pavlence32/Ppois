@@ -31,19 +31,19 @@ class Rule
      * @brief Возвращает правую часть правила
      * @return Строка, на которую происходит замена
      */
-    std::string Get_right();
+    std::string Get_right() const;
  
     /**
      * @brief Возвращает левую часть правила
      * @return Строка, которую нужно найти в слове
      */
-    std::string Get_left();
+    std::string Get_left() const;
  
     /**
      * @brief Проверяет, является ли правило заключительным
      * @return true, если после применения правила алгоритм останавливается
      */
-    bool Is_final();
+    bool Is_final() const;
 };
  
 /**

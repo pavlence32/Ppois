@@ -7,17 +7,17 @@ Rule::Rule(std::string right, std::string left, bool is_final)
     this->is_final = is_final;
 }
 
-std::string Rule::Get_left()
+std::string Rule::Get_left() const
 {
     return left;
 }
 
-std::string Rule::Get_right()
+std::string Rule::Get_right() const
 {
     return right;
 }
 
-bool Rule::Is_final()
+bool Rule::Is_final() const
 {
     return is_final;
 }
