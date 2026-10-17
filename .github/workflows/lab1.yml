@@ -6,6 +6,7 @@ on:
     branches:
       - lab1
       - main
+      - lab1-feature
     paths:
       - 'lab1/**'
       - '.github/workflows/lab1.yml'
