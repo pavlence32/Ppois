@@ -1,7 +1,13 @@
 #include "room.hpp"
-Room::Room(int roomkey,bool status,int flot):roomkey{roomkey},status{status},flot{flot}
-{
-}
+Room::Room(int number,std::string type,float base_price,int roomkey,bool status,int floor,Bed bed,float priceMultiplier)
+    : number(number),
+      type(type, priceMultiplier),
+      base_price(base_price),
+      roomkey(roomkey),
+      status(status),
+      floor(floor),
+      bed(bed)
+{}
 int Room::get_roomkey()
 {
     return roomkey;
