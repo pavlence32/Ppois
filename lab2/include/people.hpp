@@ -8,10 +8,10 @@ class People
     int number;
     public :
     People(int age,std::string name,std::string male,int number);
-    int getAge();
-    std::string getName();
-    std::string getMale();
-    int getNumber();
+    int getAge() const;
+    std::string getName() const;
+    std::string getMale() const;
+    int getNumber() const;
 
 
 

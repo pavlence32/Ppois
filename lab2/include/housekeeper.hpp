@@ -2,6 +2,7 @@
 class Housekeeper:public employee
 {
     bool status=false;
+    public:
     using employee::employee;
     void work();
     bool get_status();
