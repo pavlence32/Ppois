@@ -1,3 +1,5 @@
+#pragma once
+
 #include "employee.hpp"
 class receptionist:public employee
 {

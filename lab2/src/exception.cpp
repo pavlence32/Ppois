@@ -1,7 +1,9 @@
 #include "exception.hpp"
-EmployeeUnavailableException::EmployeeUnavailableException(std::string message):message{message}
+
+Exception::Exception(std::string message):message{message}
 {}
-std::string EmployeeUnavailableException::getMessage() const
+
+std::string Exception::getMessage() const
 {
     return message;
 }

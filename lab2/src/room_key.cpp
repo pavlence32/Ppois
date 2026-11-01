@@ -1,0 +1,42 @@
+#include "room_key.hpp"
+
+#include "exception.hpp"
+#include "room.hpp"
+
+RoomKey::RoomKey(std::string id, Room* room, Guest* owner,
+                 Date valid_from, Date valid_until)
+    : id_(id),
+      room_(room),
+      owner_(owner),
+      valid_from_(valid_from),
+      valid_until_(valid_until),
+      active_(true)
+{
+    if (!valid_date_range(valid_from_, valid_until_))
+        throw InvalidDatesException{"Некорректный срок действия ключа"};
+}
+
+bool RoomKey::is_valid(Date now) const
+{
+    return active_ && valid_from_ <= now && now < valid_until_;
+}
+
+void RoomKey::open(Room* room)
+{
+    if (room != room_)
+        throw InvalidKeyException{"Ключ принадлежит другому номеру"};
+    if (!is_valid(now_date()))
+        throw KeyExpiredException{"Срок действия ключа истёк"};
+}
+
+void RoomKey::extend(Date new_until)
+{
+    if (new_until <= valid_until_)
+        throw InvalidDatesException{"Новая дата должна продлевать срок ключа"};
+    valid_until_ = new_until;
+}
+
+void RoomKey::deactivate()
+{
+    active_ = false;
+}

@@ -1,6 +1,9 @@
+#pragma once
+
 #include "people.hpp"
 #include <iostream>
-class employee: public People
+
+class employee : public People
 {
     std::string position;
     public:
@@ -9,3 +12,4 @@ class employee: public People
 
 };
 
+using Employee = employee;

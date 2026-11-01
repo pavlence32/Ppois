@@ -1,3 +1,5 @@
+#pragma once
+
 #include "people.hpp"
 class Guest : public People
 {
