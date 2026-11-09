@@ -14,6 +14,11 @@ class Stay
     Date actual_check_in_;
     Date actual_check_out_;
     StayStatus status_;
+    Money service_total_;
+    Money deposit_;
+    bool key_returned_ = false;
+    bool late_checkout_requested_ = false;
+    int guests_present_ = 0;
 
 public:
     explicit Stay(Reservation* reservation);
@@ -26,4 +31,7 @@ public:
     Reservation* reservation() const;
     RoomKey* key() const;
     StayStatus status() const;
+    bool has_started() const;
+    bool is_overdue(Date now) const;
+    Money current_price() const;
 };

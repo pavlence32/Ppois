@@ -23,3 +23,13 @@ bool StandardRoom::has_balcony() const
 {
     return balcony_;
 }
+
+bool StandardRoom::is_quiet_room() const
+{
+    return !balcony_;
+}
+
+Money StandardRoom::price_for_stay(int nights, double discount) const
+{
+    return calculate_price(nights).apply_discount(discount);
+}

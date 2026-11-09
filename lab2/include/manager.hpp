@@ -11,6 +11,9 @@ private:
     std::vector<Chef> chefs;
     std::vector<Housekeeper> housekeepers;
     std::vector<receptionist> receptionists;
+    std::string office_;
+    bool on_duty_ = false;
+    int managed_rooms_ = 0;
 
 public:
     void addChef(const Chef& chef);

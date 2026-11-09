@@ -22,4 +22,21 @@ int Guest::getHouse()
 int Guest::getFlat()
 {
     return flat;
-}                           
+}
+
+bool Guest::has_complete_address() const
+{
+    return !country.empty() && !city.empty() && !street.empty() &&
+           house > 0 && flat >= 0;
+}
+
+std::string Guest::full_address() const
+{
+    return city + ", " + street + " " + std::to_string(house) +
+           ", " + std::to_string(flat);
+}
+
+bool Guest::can_make_reservation() const
+{
+    return is_adult() && has_valid_name() && has_complete_address();
+}

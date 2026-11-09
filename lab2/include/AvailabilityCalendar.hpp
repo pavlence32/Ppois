@@ -11,6 +11,9 @@ class Reservation;
 class AvailabilityCalendar
 {
     std::map<Room*, std::vector<Reservation*>> bookings_;
+    Date last_update_;
+    bool automatic_updates_ = true;
+    int change_count_ = 0;
 
 public:
     bool is_free(Room* room, Date start, Date end) const;

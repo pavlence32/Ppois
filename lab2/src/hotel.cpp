@@ -77,3 +77,29 @@ const std::string& Hotel::get_check_out_time() const
 {
     return check_out_time_;
 }
+
+std::size_t Hotel::room_count() const
+{
+    std::size_t count = 0;
+    for (Floor* floor : floors_)
+        count += floor->get_rooms().size();
+    return count;
+}
+
+std::size_t Hotel::employee_count() const
+{
+    return employees_.size();
+}
+
+bool Hotel::has_available_room(Date start, Date end, int guests) const
+{
+    return !find_available_rooms(start, end, guests).empty();
+}
+
+void Hotel::clean_all_dirty_rooms()
+{
+    for (Floor* floor : floors_)
+        for (Room* room : floor->get_rooms())
+            if (room->get_status() == RoomStatus::Dirty)
+                room->mark_clean();
+}

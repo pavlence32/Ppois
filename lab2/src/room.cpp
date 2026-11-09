@@ -111,3 +111,41 @@ void Room::can_accommodate(int guests) const
     if (guests < 0 || guests > capacity_)
         throw RoomOverCapacityException{"Вместимость номера превышена"};
 }
+
+void Room::add_reservation_dates(Date start, Date end)
+{
+    if (!valid_date_range(start, end))
+        throw InvalidDatesException{"Некорректные даты брони"};
+    reservations_.push_back(std::make_pair(start, end));
+}
+
+void Room::remove_reservation_dates(Date start, Date end)
+{
+    for (auto it = reservations_.begin(); it != reservations_.end(); ++it)
+    {
+        if (it->first == start && it->second == end)
+        {
+            reservations_.erase(it);
+            return;
+        }
+    }
+}
+
+bool Room::has_free_capacity(int guests) const
+{
+    return guests > 0 && guests <= capacity_ &&
+           status_ != RoomStatus::Dirty;
+}
+
+Money Room::price_for_guests(int guests, int nights) const
+{
+    can_accommodate(guests);
+    if (nights <= 0)
+        throw InvalidDatesException{"Количество ночей должно быть положительным"};
+    return calculate_price(nights);
+}
+
+int Room::free_beds_count() const
+{
+    return capacity_;
+}

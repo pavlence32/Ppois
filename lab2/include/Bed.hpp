@@ -6,6 +6,11 @@ class Bed
 {
     TypeBed type;
     int capacity;
+    bool occupied = false;
+    bool extra = false;
     public:
     Bed(TypeBed type,int capacity);
+    bool fits_guests(int guests) const;
+    bool is_double() const;
+    int get_capacity() const;
 };

@@ -39,3 +39,18 @@ bool Amenity::is_usable() const
 {
     return usable_;
 }
+
+bool Amenity::is_paid() const
+{
+    return paid_;
+}
+
+void Amenity::change_price(Money price)
+{
+    price_per_day_ = price;
+}
+
+bool Amenity::is_available_for(int nights) const
+{
+    return usable_ && nights > 0;
+}

@@ -54,7 +54,34 @@ std::size_t Floor::count_occupied() const
         if (room->get_status() == RoomStatus::Occupied)
             count++;
     }
+
     return count;
+}
+
+std::size_t Floor::count_free() const
+{
+    std::size_t count = 0;
+    for (Room* room : rooms_)
+        if (room->get_status() == RoomStatus::Free)
+            ++count;
+    return count;
+}
+
+std::size_t Floor::count_dirty() const
+{
+    std::size_t count = 0;
+    for (Room* room : rooms_)
+        if (room->get_status() == RoomStatus::Dirty)
+            ++count;
+    return count;
+}
+
+Room* Floor::find_room(int number) const
+{
+    for (Room* room : rooms_)
+        if (room->get_number() == number)
+            return room;
+    return nullptr;
 }
 
 const std::vector<Room*>& Floor::get_rooms() const

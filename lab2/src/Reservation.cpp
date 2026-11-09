@@ -111,3 +111,35 @@ void Reservation::mark_no_show(Date now)
         throw InvalidReservationStateException{"Бронь нельзя отметить как неявившуюся"};
     status_ = ReservationStatus::NoShow;
 }
+
+bool Reservation::can_check_in(Date now) const
+{
+    return status_ == ReservationStatus::Confirmed && now >= check_in_ &&
+           now < check_out_;
+}
+
+bool Reservation::can_cancel(Date now) const
+{
+    return is_active() && (policy_ == nullptr || policy_->can_cancel(*this, now));
+}
+
+void Reservation::change_guest_count(int guests)
+{
+    if (guests <= 0)
+        throw RoomOverCapacityException{"Число гостей должно быть положительным"};
+    room_->can_accommodate(guests);
+    guests_count_ = guests;
+    total_price_ = calculate_total();
+}
+
+Money Reservation::price_per_night() const
+{
+    return room_->calculate_price(1);
+}
+
+bool Reservation::is_finished() const
+{
+    return status_ == ReservationStatus::Cancelled ||
+           status_ == ReservationStatus::NoShow ||
+           status_ == ReservationStatus::Completed;
+}

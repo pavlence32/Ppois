@@ -52,3 +52,23 @@ Date GuestRequest::check_in() const { return check_in_; }
 Date GuestRequest::check_out() const { return check_out_; }
 int GuestRequest::guests_count() const { return guests_count_; }
 RequestStatus GuestRequest::status() const { return status_; }
+
+bool GuestRequest::needs_amenity(const std::string& name) const
+{
+    for (const std::string& amenity : required_amenities_)
+        if (amenity == name)
+            return true;
+    return false;
+}
+
+bool GuestRequest::accepts_price(Money price) const
+{
+    return price.value() <= max_price_per_night_.value();
+}
+
+void GuestRequest::cancel()
+{
+    if (status_ != RequestStatus::Open)
+        throw InvalidReservationStateException{"Заявку нельзя отменить"};
+    status_ = RequestStatus::Fulfilled;
+}

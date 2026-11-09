@@ -49,3 +49,19 @@ Money CancellationPolicy::get_refund_amount(const Reservation& reservation,
 {
     return reservation.total_price() * 1.0 - calculate_penalty(reservation, now);
 }
+
+bool CancellationPolicy::has_penalty(const Reservation& reservation, Date now) const
+{
+    return calculate_penalty(reservation, now).is_positive();
+}
+
+Money CancellationPolicy::calculate_refund(const Reservation& reservation, Date now) const
+{
+    return get_refund_amount(reservation, now);
+}
+
+bool CancellationPolicy::is_free_cancellation_period(
+    const Reservation& reservation, Date now) const
+{
+    return days_before_arrival(reservation, now) > free_cancel_days_;
+}

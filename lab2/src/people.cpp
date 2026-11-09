@@ -19,3 +19,18 @@ int People::getNumber() const
 {
     return number;
 }
+
+bool People::is_adult() const
+{
+    return age >= 18;
+}
+
+bool People::has_valid_name() const
+{
+    return !name.empty();
+}
+
+bool People::same_person(const People& other) const
+{
+    return number == other.number;
+}

@@ -4,6 +4,8 @@
 class Chef:public employee
 {
     bool status=false;
+    int prepared_orders_ = 0;
+    bool kitchen_access_ = true;
     public:
     using employee::employee;
     void work();

@@ -96,3 +96,19 @@ void Stay::extend_stay(Date new_date, AvailabilityCalendar& calendar)
 Reservation* Stay::reservation() const { return reservation_; }
 RoomKey* Stay::key() const { return key_; }
 StayStatus Stay::status() const { return status_; }
+
+bool Stay::has_started() const
+{
+    return actual_check_in_ != Date{};
+}
+
+bool Stay::is_overdue(Date now) const
+{
+    return status_ == StayStatus::Active &&
+           now > reservation_->check_out();
+}
+
+Money Stay::current_price() const
+{
+    return reservation_->room()->calculate_price(std::max(1, actual_nights()));
+}

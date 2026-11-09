@@ -32,3 +32,13 @@ ViewType DeluxeRoom::get_view() const
 {
     return view_;
 }
+
+bool DeluxeRoom::has_premium_view() const
+{
+    return view_ == ViewType::Sea || view_ == ViewType::Park;
+}
+
+Money DeluxeRoom::price_for_stay(int nights, double discount) const
+{
+    return calculate_price(nights).apply_discount(discount);
+}

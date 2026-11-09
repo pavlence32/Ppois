@@ -23,6 +23,22 @@ class Reservation
     Date created_at_;
     BookingPolicy* policy_;
     AvailabilityCalendar* calendar_;
+    bool deposit_paid_ = false;
+    bool breakfast_included_ = false;
+    Money deposit_;
+    Money service_total_;
+    double discount_percent_ = 0.0;
+    std::string comment_;
+    bool paid_ = false;
+    bool invoice_sent_ = false;
+    std::string payment_method_;
+    std::string source_;
+    int changes_count_ = 0;
+    std::string confirmation_code_;
+    std::string cancellation_reason_;
+    std::string invoice_number_;
+    std::string arrival_note_;
+    std::string departure_note_;
 
 public:
     Reservation(std::string id, Guest* guest, Room* room, Date check_in,
@@ -49,6 +65,9 @@ public:
     bool overlaps(Date start, Date end) const;
     bool is_active() const;
     void mark_no_show(Date now);
+    bool can_check_in(Date now) const;
+    bool can_cancel(Date now) const;
+    void change_guest_count(int guests);
+    Money price_per_night() const;
+    bool is_finished() const;
 };
-
-

@@ -34,3 +34,16 @@ bool Suite::has_jacuzzi() const
 {
     return jacuzzi_;
 }
+
+bool Suite::includes_service(const std::string& name) const
+{
+    for (Service* service : included_services_)
+        if (service != nullptr && service->get_name() == name)
+            return true;
+    return false;
+}
+
+Money Suite::price_for_stay(int nights, double discount) const
+{
+    return calculate_price(nights).apply_discount(discount);
+}

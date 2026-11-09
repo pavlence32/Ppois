@@ -15,6 +15,11 @@ public:
     Money operator*(double multiplier) const;
     Money operator+(const Money& other) const;
     Money operator-(const Money& other) const;
+    Money percent(double value) const;
+    Money add_tax(double rate) const;
+    Money apply_discount(double rate) const;
+    bool is_zero() const;
+    bool is_positive() const;
 };
 
 struct Address
@@ -62,3 +67,5 @@ enum class RequestStatus {
 
 bool valid_date_range(Date start, Date end);
 Date now_date();
+int days_between(Date start, Date end);
+bool date_has_passed(Date date, Date now);

@@ -9,6 +9,10 @@ class Suite : public Room
     bool kitchen_;
     bool jacuzzi_;
     std::vector<Service*> included_services_;
+    bool living_room_ = true;
+    bool butler_service_ = false;
+    int maximum_guests_ = 0;
+    Money extra_bed_price_;
 
 public:
     Suite(int number, Floor* floor, Money base_price, RoomStatus status,
@@ -19,4 +23,6 @@ public:
     int get_bedrooms() const;
     bool has_kitchen() const;
     bool has_jacuzzi() const;
+    bool includes_service(const std::string& name) const;
+    Money price_for_stay(int nights, double discount) const;
 };

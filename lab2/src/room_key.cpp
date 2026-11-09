@@ -40,3 +40,20 @@ void RoomKey::deactivate()
 {
     active_ = false;
 }
+
+bool RoomKey::belongs_to(Guest* guest) const
+{
+    return owner_ == guest;
+}
+
+bool RoomKey::opens_room(Room* room) const
+{
+    return room_ == room && is_valid(now_date());
+}
+
+int RoomKey::remaining_days(Date now) const
+{
+    if (!is_valid(now))
+        return 0;
+    return days_between(now, valid_until_);
+}

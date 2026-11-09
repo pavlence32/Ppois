@@ -68,3 +68,18 @@ void WaitList::remove_expired(Date now)
                                    }),
                     requests_.end());
 }
+
+bool WaitList::is_full() const
+{
+    return static_cast<int>(requests_.size()) >= max_size_;
+}
+
+bool WaitList::contains(Guest* guest) const
+{
+    return position_of(guest) != -1;
+}
+
+int WaitList::size() const
+{
+    return static_cast<int>(requests_.size());
+}
