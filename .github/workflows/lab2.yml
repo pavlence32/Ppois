@@ -37,7 +37,7 @@ jobs:
             -DENABLE_COVERAGE=ON
 
       - name: Build Lab 2
-        run: cmake --build lab2/build --parallel
+        run: cmake --build lab2/build --target lab2_tests --parallel 2
 
       - name: Test Lab 2
         run: ctest --test-dir lab2/build --output-on-failure
