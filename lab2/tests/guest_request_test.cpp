@@ -42,6 +42,7 @@ TEST_CASE("Guest request rejects capacity, amenities and price")
 TEST_CASE("Guest request rejects invalid data")
 {
     Guest guest(30, "Ann", "F", 1, "BY", "Minsk", "Main", 1, 1);
-    REQUIRE_THROWS_AS(GuestRequest(&guest, now_date(), now_date(), 1, {}, Money(10)),
+    const Date date = now_date();
+    REQUIRE_THROWS_AS(GuestRequest(&guest, date, date, 1, {}, Money(10)),
                       InvalidDatesException);
 }
