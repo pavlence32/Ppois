@@ -1,4 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
+#include "hotel/conference_booking.hpp"
+TEST_CASE("Conference booking") { ConferenceBooking b(10,Money(100)); REQUIRE(b.total().value()==1000); REQUIRE_FALSE(b.is_reserved()); b.reserve(); REQUIRE(b.is_reserved()); }
+#include <catch2/catch_test_macros.hpp>
+#include "hotel/hotel_event.hpp"
+TEST_CASE("Hotel event") { auto n=now_date(); HotelEvent e("concert",n,10), empty("",n,0); REQUIRE(e.has_name()); REQUIRE_FALSE(empty.has_name()); REQUIRE(e.has_started(n)); REQUIRE(e.can_accept(10)); REQUIRE_FALSE(e.can_accept(11)); }
+#include <catch2/catch_test_macros.hpp>
 #include "hotel/hotel.hpp"
 #include "rooms/floor.hpp"
 #include "rooms/standard_room.hpp"
@@ -29,3 +35,9 @@ TEST_CASE("Hotel aggregates floors, rooms and employees")
     hotel.clean_all_dirty_rooms();
     REQUIRE(dirty_room.get_status() == RoomStatus::Free);
 }
+#include <catch2/catch_test_macros.hpp>
+#include "hotel/house_rule.hpp"
+TEST_CASE("House rule") { HouseRule r("No smoking","description"); REQUIRE(r.is_active()); REQUIRE(r.applies_to("No smoking")); REQUIRE_FALSE(r.applies_to("Pets")); r.disable(); REQUIRE_FALSE(r.is_active()); }
+#include <catch2/catch_test_macros.hpp>
+#include "hotel/parking_ticket.hpp"
+TEST_CASE("Parking ticket") { ParkingTicket t("1","ABC"); REQUIRE(t.is_active()); REQUIRE(t.belongs_to_car("ABC")); REQUIRE_FALSE(t.belongs_to_car("XYZ")); t.close(); REQUIRE_FALSE(t.is_active()); }
