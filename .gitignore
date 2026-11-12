@@ -17,3 +17,4 @@ main
 build/
 *.gcda
 *.gcno.DS_Store
+.aider*

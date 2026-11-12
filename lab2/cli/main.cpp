@@ -167,9 +167,9 @@ int main()
     Hotel hotel("Пример", 3, address);
     Floor floor(1, &hotel);
     std::vector<std::unique_ptr<StandardRoom>> rooms;
-    for (int number = 101; number <= 105; ++number)
+    for (int number = 101; number <= 108; ++number)
     {
-        int capacity = number == 101 ? 1 : 2;
+        int capacity = number == 101 ? 1 : (number >= 106 ? 4 : 2);
         rooms.push_back(std::make_unique<StandardRoom>(
             number, &floor, Money(120.0 + (number - 101) * 20),
             RoomStatus::Free, capacity, std::vector<Amenity>(), 24.0, false));
