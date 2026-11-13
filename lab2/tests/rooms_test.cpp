@@ -152,6 +152,40 @@ TEST_CASE("Room rejects invalid capacity and state transitions", "[room]")
                                                 support::today()),
                     InvalidDatesException);
 }
+
+TEST_CASE("Room exposes state and handles amenities and pricing", "[room]")
+{
+    Floor floor(1);
+    StandardRoom room(101, &floor, Money(100), RoomStatus::Free, 2, {}, 20, false);
+    room.add_amenity(Amenity("wifi", AmenityCategory::Technology, false));
+
+    CHECK(room.get_number() == 101);
+    CHECK(room.get_floor() == &floor);
+    CHECK(room.get_status() == RoomStatus::Free);
+    CHECK(room.get_capacity() == 2);
+    CHECK(room.get_area() == 20);
+    CHECK(room.has_free_capacity(1));
+    CHECK(room.free_beds_count() == 2);
+    CHECK(room.price_for_guests(2, 1).value() == 100);
+    CHECK_FALSE(room.is_available(support::today(), support::today()));
+    CHECK_FALSE(room.has_amenity("broken"));
+
+    CHECK(room.break_amenity("wifi"));
+    CHECK_FALSE(room.has_amenity("wifi"));
+    CHECK_FALSE(room.break_amenity("missing"));
+    CHECK(room.repair_amenity("wifi"));
+    CHECK_FALSE(room.repair_amenity("missing"));
+
+    const Date reservation_start = support::today() + std::chrono::hours(24 * 3);
+    const Date reservation_end = reservation_start + std::chrono::hours(24);
+    room.add_reservation_dates(reservation_start, reservation_end);
+    CHECK_FALSE(room.is_available(reservation_start, reservation_end));
+    room.remove_reservation_dates(support::days_after(10),
+                                  support::days_after(11));
+    room.remove_reservation_dates(reservation_start, reservation_end);
+    CHECK(room.is_available(reservation_start, reservation_end));
+    CHECK_THROWS_AS(room.price_for_guests(1, 0), InvalidDatesException);
+}
 #include <catch2/catch_test_macros.hpp>
 #include "rooms/Roomtype.hpp"
 TEST_CASE("Room type") { RoomType t("suite",2.0f); REQUIRE(t.get_type()=="suite"); REQUIRE(t.get_priceMultiplier()==2.0f); }

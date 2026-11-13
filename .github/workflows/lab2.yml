@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   test:
-    name: Build, test and coverage
+    name: Build, test, coverage and lint
     runs-on: macos-latest
 
     steps:
@@ -41,6 +41,12 @@ jobs:
 
       - name: Test Lab 2
         run: ctest --test-dir lab2/build --output-on-failure
+
+      - name: Lint Lab 2
+        run: |
+          find lab2/src -name '*.cpp' -print0 | \
+            xargs -0 clang-tidy -p lab2/build \
+            --checks='-*,clang-analyzer-*'
 
       - name: Coverage Lab 2
         working-directory: lab2
