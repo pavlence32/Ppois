@@ -213,6 +213,37 @@ TEST_CASE("Guest extends a reservation and cancels it", "[booking]")
     CHECK(context.room.get_status() == RoomStatus::Free);
 }
 
+TEST_CASE("Confirmed reservation can be paid once", "[booking]")
+{
+    support::BookingContext context;
+    Reservation reservation = support::make_reservation(context);
+    reservation.confirm(context.calendar);
+
+    reservation.pay("card");
+
+    CHECK(reservation.is_paid());
+    CHECK(reservation.payment_method() == "card");
+    CHECK_THROWS_AS(reservation.pay("cash"), InvalidPaymentException);
+}
+
+TEST_CASE("Paid reservation refunds according to cancellation policy", "[booking]")
+{
+    support::BookingContext context;
+    Reservation reservation = support::make_reservation(context);
+    reservation.confirm(context.calendar);
+    reservation.pay("cash");
+
+    const Date free_cancellation = context.check_in - std::chrono::hours(24 * 5);
+    CHECK(reservation.refund_amount(free_cancellation).value() == 200.0);
+    reservation.cancel(free_cancellation);
+
+    Reservation near_arrival = support::make_reservation(context, 1);
+    near_arrival.confirm(context.calendar);
+    near_arrival.pay("card");
+    const Date one_day_before = context.check_in - std::chrono::hours(24);
+    CHECK(near_arrival.refund_amount(one_day_before).value() == 100.0);
+}
+
 TEST_CASE("Reservation rejects invalid booking workflow steps", "[booking]")
 {
     support::BookingContext context;

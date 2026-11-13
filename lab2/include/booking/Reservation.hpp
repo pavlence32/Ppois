@@ -3,7 +3,9 @@
 #include "core/model.hpp"
 
 #include "booking/reservation_note.hpp"
+#include "finance/payment.hpp"
 
+#include <optional>
 #include <string>
 
 class Guest;
@@ -32,6 +34,7 @@ class Reservation
     double discount_percent_ = 0.0;
     std::string comment_;
     bool paid_ = false;
+    std::optional<Payment> payment_;
     bool invoice_sent_ = false;
     std::string payment_method_;
     std::string source_;
@@ -72,4 +75,8 @@ public:
     void change_guest_count(int guests);
     Money price_per_night() const;
     bool is_finished() const;
+    void pay(const std::string& method);
+    bool is_paid() const;
+    const std::string& payment_method() const;
+    Money refund_amount(Date now) const;
 };

@@ -5,6 +5,7 @@
 #include "people/guest.hpp"
 #include "hotel/hotel.hpp"
 #include "booking/Reservation.hpp"
+#include "booking/Stay.hpp"
 #include "rooms/standard_room.hpp"
 
 #include <chrono>
@@ -214,8 +215,40 @@ void print_reservations(
                   << ", гость: " << reservation->guest()->getName()
                   << ", номер: " << reservation->room()->get_number()
                   << ", статус: " << status_name(reservation->status())
-                  << ", сумма: " << reservation->total_price().value() << "\n";
+                  << ", сумма: " << reservation->total_price().value()
+                  << ", оплата: "
+                  << (reservation->is_paid() ? "оплачено" : "не оплачено")
+                  << "\n";
     }
+}
+
+void print_stays(const std::vector<std::unique_ptr<Stay>>& stays)
+{
+    bool found = false;
+    for (const auto& stay : stays)
+    {
+        if (stay->status() != StayStatus::Active ||
+            stay->reservation()->status() != ReservationStatus::CheckedIn)
+            continue;
+
+        found = true;
+        std::cout << "  " << stay->reservation()->id()
+                  << ", гость: " << stay->reservation()->guest()->getName()
+                  << ", номер: " << stay->reservation()->room()->get_number()
+                  << "\n";
+    }
+
+    if (!found)
+        std::cout << "Активных проживаний нет.\n";
+}
+
+void print_room_amenities_with_state(Room& room)
+{
+    std::cout << "Удобства номера №" << room.get_number() << ":\n";
+    for (const Amenity& amenity : room.get_amenities())
+        std::cout << "  - " << amenity.get_name()
+                  << (amenity.is_usable() ? " (исправно)" : " (сломан)")
+                  << "\n";
 }
 }
 
@@ -254,6 +287,7 @@ int main()
     AvailabilityCalendar calendar;
     std::vector<std::unique_ptr<Guest>> guests;
     std::vector<std::unique_ptr<Reservation>> reservations;
+    std::vector<std::unique_ptr<Stay>> stays;
 
     std::cout << "Система гостиницы\n";
     add_guest(guests);
@@ -267,6 +301,10 @@ int main()
                   << "4. Создать и подтвердить бронь\n"
                   << "5. Показать статус броней\n"
                   << "6. Отменить бронь\n"
+                  << "7. Заселить гостя (check-in)\n"
+                  << "8. Выселить гостя (check-out)\n"
+                  << "9. Убрать грязные номера\n"
+                  << "10. Сломать/починить удобство\n"
                   << "0. Выход\n";
         int command = read_int("Выберите действие: ", 0);
 
@@ -322,12 +360,24 @@ int main()
                     continue;
                 }
 
+                std::cout << "Способ оплаты:\n"
+                          << "  1. Банковская карта\n"
+                          << "  2. Наличные\n";
+                const int payment_choice = read_int("Выберите способ оплаты: ", 1);
+                if (payment_choice != 1 && payment_choice != 2)
+                {
+                    std::cout << "Неверный способ оплаты.\n";
+                    continue;
+                }
+
                 std::string id = "CLI-" + std::to_string(reservations.size() + 1);
                 auto reservation = std::make_unique<Reservation>(
                     id, guests[guest_index].get(), selected_room, check_in,
                     check_out, guests_count, &policy);
                 reservation->confirm(calendar);
-                std::cout << "Бронь " << id << " подтверждена. Сумма: "
+                reservation->pay(payment_choice == 1 ? "card" : "cash");
+                std::cout << "Бронь " << id
+                          << " подтверждена. Оплата: оплачено. Сумма: "
                           << reservation->total_price().value() << "\n";
                 reservations.push_back(std::move(reservation));
             }
@@ -346,11 +396,104 @@ int main()
                 {
                     if (reservation->id() == id)
                     {
-                        reservation->cancel(now_date());
-                        std::cout << "Бронь отменена.\n";
+                        const Date cancellation_date = now_date();
+                        const Money refund =
+                            reservation->refund_amount(cancellation_date);
+                        reservation->cancel(cancellation_date);
+                        std::cout << "Бронь отменена.";
+                        if (reservation->is_paid())
+                            std::cout << " Возврат: " << refund.value();
+                        std::cout << "\n";
                         break;
                     }
                 }
+            }
+            else if (command == 7)
+            {
+                print_reservations(reservations);
+                if (reservations.empty())
+                    continue;
+
+                std::string id = read_string("Введите ID брони для заселения: ");
+                Reservation* target = nullptr;
+                for (const auto& reservation : reservations)
+                    if (reservation->id() == id)
+                        target = reservation.get();
+
+                if (target == nullptr ||
+                    target->status() != ReservationStatus::Confirmed)
+                {
+                    std::cout << "Подтверждённая бронь с таким ID не найдена.\n";
+                    continue;
+                }
+
+                stays.push_back(std::make_unique<Stay>(target));
+                stays.back()->check_in(now_date());
+                std::cout << "Гость " << target->guest()->getName()
+                          << " заселён в номер "
+                          << target->room()->get_number() << ".\n";
+            }
+            else if (command == 8)
+            {
+                std::cout << "\nАктивные проживания:\n";
+                print_stays(stays);
+
+                std::string id = read_string("Введите ID брони для выселения: ");
+                Stay* target = nullptr;
+                for (const auto& stay : stays)
+                    if (stay->reservation()->id() == id &&
+                        stay->status() == StayStatus::Active &&
+                        stay->reservation()->status() ==
+                            ReservationStatus::CheckedIn)
+                        target = stay.get();
+
+                if (target == nullptr)
+                {
+                    std::cout << "Активное проживание с таким ID не найдено.\n";
+                    continue;
+                }
+
+                const int room_number = target->reservation()->room()->get_number();
+                target->check_out(now_date());
+                std::cout << "Гость выселен. Номер " << room_number
+                          << " переведён в статус «грязный».\n";
+            }
+            else if (command == 9)
+            {
+                int dirty_count = 0;
+                for (const auto& room : rooms)
+                    if (room->get_status() == RoomStatus::Dirty)
+                        ++dirty_count;
+
+                hotel.clean_all_dirty_rooms();
+                std::cout << "Убрано номеров: " << dirty_count << ".\n";
+            }
+            else if (command == 10)
+            {
+                int action = read_int(
+                    "1 - сломать удобство, 2 - починить удобство: ", 1);
+                if (action != 1 && action != 2)
+                {
+                    std::cout << "Неверный выбор.\n";
+                    continue;
+                }
+
+                int room_number = read_int("Введите номер комнаты: ", 1);
+                Room& room = hotel.find_room(room_number);
+                print_room_amenities_with_state(room);
+
+                std::string name = read_string("Введите название удобства: ");
+                bool changed = action == 1 ? room.break_amenity(name)
+                                           : room.repair_amenity(name);
+                if (!changed)
+                {
+                    std::cout << "Удобство с таким названием не найдено.\n";
+                    continue;
+                }
+
+                std::cout << (action == 1
+                                  ? "Удобство отмечено как сломанное.\n"
+                                  : "Удобство отремонтировано.\n");
             }
             else if (command == 0)
             {

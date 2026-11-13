@@ -66,4 +66,6 @@ public:
     Money price_for_guests(int guests, int nights) const;
     int free_beds_count() const;
     const std::vector<Amenity>& get_amenities() const;
+    bool break_amenity(const std::string& name);
+    bool repair_amenity(const std::string& name);
 };

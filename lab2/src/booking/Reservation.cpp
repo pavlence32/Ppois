@@ -143,3 +143,33 @@ bool Reservation::is_finished() const
            status_ == ReservationStatus::NoShow ||
            status_ == ReservationStatus::Completed;
 }
+
+void Reservation::pay(const std::string& method)
+{
+    if (status_ != ReservationStatus::Confirmed)
+        throw InvalidReservationStateException{
+            "Оплатить можно только подтверждённую бронь"};
+    if (paid_)
+        throw InvalidPaymentException{"Бронь уже оплачена"};
+    if (method != "card" && method != "cash")
+        throw InvalidPaymentException{"Неизвестный способ оплаты"};
+
+    payment_.emplace(total_price_, method);
+    payment_->complete();
+    paid_ = true;
+    payment_method_ = method;
+}
+
+bool Reservation::is_paid() const { return paid_; }
+
+const std::string& Reservation::payment_method() const
+{
+    return payment_method_;
+}
+
+Money Reservation::refund_amount(Date now) const
+{
+    if (!paid_ || policy_ == nullptr)
+        return Money{0.0};
+    return total_price_ - policy_->calculate_penalty(*this, now);
+}

@@ -154,3 +154,29 @@ const std::vector<Amenity>& Room::get_amenities() const
 {
     return amenities_;
 }
+
+bool Room::break_amenity(const std::string& name)
+{
+    for (auto& amenity : amenities_)
+    {
+        if (amenity.get_name() == name)
+        {
+            amenity.mark_broken();
+            return true;
+        }
+    }
+    return false;
+}
+
+bool Room::repair_amenity(const std::string& name)
+{
+    for (auto& amenity : amenities_)
+    {
+        if (amenity.get_name() == name)
+        {
+            amenity.repair();
+            return true;
+        }
+    }
+    return false;
+}
