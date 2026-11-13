@@ -51,6 +51,43 @@ Date make_date(int days_from_today)
     return now_date() + std::chrono::hours(24 * days_from_today);
 }
 
+std::vector<Amenity> make_amenities(int number)
+{
+    std::vector<Amenity> amenities;
+    amenities.emplace_back("Wi-Fi", AmenityCategory::Technology, false);
+    amenities.emplace_back("Телевизор", AmenityCategory::Technology, false);
+    amenities.emplace_back("Кондиционер", AmenityCategory::Comfort, false);
+
+    switch (number % 3)
+    {
+    case 0:
+        amenities.emplace_back("Вид на море", AmenityCategory::Comfort, false);
+        break;
+    case 1:
+        amenities.emplace_back("Вид на сад", AmenityCategory::Comfort, false);
+        break;
+    default:
+        amenities.emplace_back("Вид на город", AmenityCategory::Comfort, false);
+        break;
+    }
+
+    const int last_digit = number % 10;
+    if (last_digit == 1)
+        amenities.emplace_back("Сейф", AmenityCategory::Comfort, true, Money(3.0));
+    if (last_digit == 2 || last_digit == 7)
+        amenities.emplace_back("Балкон", AmenityCategory::Comfort, false);
+    if (last_digit == 3 || last_digit >= 6)
+        amenities.emplace_back("Мини-бар", AmenityCategory::Food, true, Money(5.0));
+    if (last_digit >= 6)
+        amenities.emplace_back("Кухня", AmenityCategory::Comfort, false);
+    if (last_digit == 5)
+        amenities.emplace_back("Рабочий стол", AmenityCategory::Comfort, false);
+    if (number % 2 == 0)
+        amenities.emplace_back("Фен", AmenityCategory::Comfort, false);
+
+    return amenities;
+}
+
 std::string status_name(ReservationStatus status)
 {
     switch (status)
@@ -86,6 +123,27 @@ void print_rooms(const std::vector<Room*>& rooms)
                   << ", вместимость: " << room->get_capacity()
                   << ", цена за ночь: " << room->calculate_price(1).value()
                   << "\n";
+
+        const std::vector<Amenity>& amenities = room->get_amenities();
+        if (amenities.empty())
+        {
+            std::cout << "      удобства: нет\n";
+            continue;
+        }
+
+        std::cout << "      удобства: ";
+        for (std::size_t index = 0; index < amenities.size(); ++index)
+        {
+            const Amenity& amenity = amenities[index];
+            if (index != 0)
+                std::cout << ", ";
+            std::cout << amenity.get_name();
+            if (!amenity.is_usable())
+                std::cout << " (сломан)";
+            else if (amenity.is_paid())
+                std::cout << " (+" << amenity.get_cost(1).value() << "/ночь)";
+        }
+        std::cout << "\n";
     }
 }
 
@@ -164,18 +222,33 @@ void print_reservations(
 int main()
 {
     Address address{"Минск", "Центральная", "1"};
-    Hotel hotel("Пример", 3, address);
-    Floor floor(1, &hotel);
+    Hotel hotel("Пример", 4, address);
+
+    const int floors_count = 5;
+    const int rooms_per_floor = 10;
+    std::vector<std::unique_ptr<Floor>> floors;
     std::vector<std::unique_ptr<StandardRoom>> rooms;
-    for (int number = 101; number <= 108; ++number)
+
+    for (int floor_number = 1; floor_number <= floors_count; ++floor_number)
     {
-        int capacity = number == 101 ? 1 : (number >= 106 ? 4 : 2);
-        rooms.push_back(std::make_unique<StandardRoom>(
-            number, &floor, Money(120.0 + (number - 101) * 20),
-            RoomStatus::Free, capacity, std::vector<Amenity>(), 24.0, false));
-        floor.add_room(rooms.back().get());
+        floors.push_back(std::make_unique<Floor>(floor_number, &hotel));
+        Floor* floor = floors.back().get();
+
+        for (int index = 1; index <= rooms_per_floor; ++index)
+        {
+            const int number = floor_number * 100 + index;
+            const int last_digit = number % 10;
+            const int capacity = last_digit == 1 ? 1 : (last_digit >= 6 ? 4 : 2);
+            const double price = 100.0 + floor_number * 10.0 + (index - 1) * 15.0;
+
+            rooms.push_back(std::make_unique<StandardRoom>(
+                number, floor, Money(price), RoomStatus::Free, capacity,
+                make_amenities(number), 20.0 + capacity * 4.0, false));
+            floor->add_room(rooms.back().get());
+        }
+
+        hotel.add_floor(floor);
     }
-    hotel.add_floor(&floor);
 
     CancellationPolicy policy(2, 50.0);
     AvailabilityCalendar calendar;

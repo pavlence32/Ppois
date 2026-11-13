@@ -149,3 +149,8 @@ int Room::free_beds_count() const
 {
     return capacity_;
 }
+
+const std::vector<Amenity>& Room::get_amenities() const
+{
+    return amenities_;
+}

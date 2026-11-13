@@ -65,4 +65,5 @@ public:
     bool has_free_capacity(int guests) const;
     Money price_for_guests(int guests, int nights) const;
     int free_beds_count() const;
+    const std::vector<Amenity>& get_amenities() const;
 };
