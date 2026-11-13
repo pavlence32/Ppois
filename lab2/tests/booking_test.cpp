@@ -151,10 +151,24 @@ TEST_CASE("ReservationNotFoundException stores message") { ReservationNotFoundEx
 
 TEST_CASE("Reservation note")
 {
+    const ReservationNote default_note;
+    REQUIRE(default_note.is_empty());
+    REQUIRE_FALSE(default_note.is_important());
+    REQUIRE_FALSE(default_note.was_created_before(
+        now_date() - std::chrono::hours(24)));
+
     ReservationNote note("late arrival", true);
     REQUIRE(note.is_important());
     REQUIRE_FALSE(note.is_empty());
     REQUIRE(note.was_created_before(now_date() + std::chrono::hours(1)));
+
+    const ReservationNote regular_note("requested quiet room", false);
+    REQUIRE_FALSE(regular_note.is_empty());
+    REQUIRE_FALSE(regular_note.is_important());
+
+    const ReservationNote empty_important_note("", true);
+    REQUIRE(empty_important_note.is_empty());
+    REQUIRE(empty_important_note.is_important());
     REQUIRE(ReservationNote("", false).is_empty());
 }
 #include <catch2/catch_test_macros.hpp>

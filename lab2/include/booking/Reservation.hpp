@@ -2,6 +2,8 @@
 
 #include "core/model.hpp"
 
+#include "booking/reservation_note.hpp"
+
 #include <string>
 
 class Guest;
@@ -37,8 +39,8 @@ class Reservation
     std::string confirmation_code_;
     std::string cancellation_reason_;
     std::string invoice_number_;
-    std::string arrival_note_;
-    std::string departure_note_;
+    ReservationNote arrival_note_;
+    ReservationNote departure_note_;
 
 public:
     Reservation(std::string id, Guest* guest, Room* room, Date check_in,

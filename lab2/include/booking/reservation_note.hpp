@@ -10,6 +10,7 @@ class ReservationNote
     bool important_;
 
 public:
+    ReservationNote() : text_(""), created_at_(now_date()), important_(false) {}
     ReservationNote(std::string text, bool important);
     bool is_important() const;
     bool is_empty() const;

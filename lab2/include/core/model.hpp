@@ -1,26 +1,9 @@
 #pragma once
 
-#include <chrono>
+#include "core/Date.hpp"
+#include "core/Money.hpp"
+
 #include <string>
-
-using Date = std::chrono::system_clock::time_point;
-
-class Money
-{
-    double amount_;
-
-public:
-    explicit Money(double amount = 0.0);
-    double value() const;
-    Money operator*(double multiplier) const;
-    Money operator+(const Money& other) const;
-    Money operator-(const Money& other) const;
-    Money percent(double value) const;
-    Money add_tax(double rate) const;
-    Money apply_discount(double rate) const;
-    bool is_zero() const;
-    bool is_positive() const;
-};
 
 struct Address
 {
@@ -64,8 +47,3 @@ enum class StayStatus {
 enum class RequestStatus {
     Open, Fulfilled, OPEN = Open, FULFILLED = Fulfilled
 };
-
-bool valid_date_range(Date start, Date end);
-Date now_date();
-int days_between(Date start, Date end);
-bool date_has_passed(Date date, Date now);
