@@ -67,7 +67,7 @@ headers. Constructors and destructors are included in the method count.
 | HotelEvent | 3 | 4 | Date |
 | HouseRule | 3 | 4 | — |
 | ParkingTicket | 3 | 4 | — |
-| Discount | 3 | 4 | Money, Date |
+| Discount | 3 | 5 | Money, Date |
 | Invoice | 3 | 5 | Money |
 | Payment | 3 | 5 | Money |
 

@@ -6,10 +6,15 @@
 #include "hotel/hotel.hpp"
 #include "booking/Reservation.hpp"
 #include "booking/Stay.hpp"
+#include "services/breakfast_order.hpp"
+#include "services/laundry_order.hpp"
+#include "services/spa_booking.hpp"
+#include "services/transport_request.hpp"
 #include "rooms/standard_room.hpp"
 
 #include <chrono>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -250,6 +255,59 @@ void print_room_amenities_with_state(Room& room)
                   << (amenity.is_usable() ? " (исправно)" : " (сломан)")
                   << "\n";
 }
+
+void order_service(Stay& stay,
+                   std::map<std::string, Money>& service_totals)
+{
+    const std::string reservation_id = stay.reservation()->id();
+    std::cout << "Дополнительные услуги:\n"
+              << "  1. Завтрак — 20 за гостя\n"
+              << "  2. Прачечная — 10 за вещь\n"
+              << "  3. SPA — 50 за процедуру\n"
+              << "  4. Трансфер — 30 за гостя\n";
+    const int choice = read_int("Выберите услугу: ", 1);
+    Money price;
+
+    switch (choice)
+    {
+    case 1:
+    {
+        const int guests = read_int("Количество завтраков: ", 1);
+        BreakfastOrder order(guests, Money(20));
+        price = order.total();
+        break;
+    }
+    case 2:
+    {
+        const int items = read_int("Количество вещей: ", 1);
+        LaundryOrder order(items, Money(10));
+        price = order.total();
+        break;
+    }
+    case 3:
+    {
+        const std::string procedure = read_string("Название процедуры: ");
+        SpaBooking order(procedure, Money(50));
+        price = order.price();
+        break;
+    }
+    case 4:
+    {
+        const int guests = read_int("Количество пассажиров: ", 1);
+        TransportRequest order(guests, Money(30));
+        price = order.price();
+        break;
+    }
+    default:
+        std::cout << "Неверный выбор услуги.\n";
+        return;
+    }
+
+    service_totals[reservation_id] = service_totals[reservation_id] + price;
+    std::cout << "Услуга добавлена к счёту. Стоимость: " << price.value()
+              << ", всего за услуги: " << service_totals[reservation_id].value()
+              << "\n";
+}
 }
 
 int main()
@@ -288,6 +346,7 @@ int main()
     std::vector<std::unique_ptr<Guest>> guests;
     std::vector<std::unique_ptr<Reservation>> reservations;
     std::vector<std::unique_ptr<Stay>> stays;
+    std::map<std::string, Money> service_totals;
 
     std::cout << "Система гостиницы\n";
     add_guest(guests);
@@ -305,6 +364,7 @@ int main()
                   << "8. Выселить гостя (check-out)\n"
                   << "9. Убрать грязные номера\n"
                   << "10. Сломать/починить удобство\n"
+                  << "11. Заказать дополнительную услугу\n"
                   << "0. Выход\n";
         int command = read_int("Выберите действие: ", 0);
 
@@ -454,9 +514,14 @@ int main()
                 }
 
                 const int room_number = target->reservation()->room()->get_number();
+                const Money extra_services = service_totals[target->reservation()->id()];
                 target->check_out(now_date());
                 std::cout << "Гость выселен. Номер " << room_number
-                          << " переведён в статус «грязный».\n";
+                          << " переведён в статус «грязный».\n"
+                          << "Дополнительные услуги: " << extra_services.value()
+                          << ". Доплата за услуги при выселении: "
+                          << extra_services.value()
+                          << "\n";
             }
             else if (command == 9)
             {
@@ -494,6 +559,29 @@ int main()
                 std::cout << (action == 1
                                   ? "Удобство отмечено как сломанное.\n"
                                   : "Удобство отремонтировано.\n");
+            }
+            else if (command == 11)
+            {
+                std::cout << "\nАктивные проживания:\n";
+                print_stays(stays);
+
+                std::string id = read_string(
+                    "Введите ID брони для заказа услуги: ");
+                Stay* target = nullptr;
+                for (const auto& stay : stays)
+                    if (stay->reservation()->id() == id &&
+                        stay->status() == StayStatus::Active &&
+                        stay->reservation()->status() ==
+                            ReservationStatus::CheckedIn)
+                        target = stay.get();
+
+                if (target == nullptr)
+                {
+                    std::cout << "Активное проживание с таким ID не найдено.\n";
+                    continue;
+                }
+
+                order_service(*target, service_totals);
             }
             else if (command == 0)
             {

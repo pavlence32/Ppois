@@ -226,6 +226,22 @@ TEST_CASE("Confirmed reservation can be paid once", "[booking]")
     CHECK_THROWS_AS(reservation.pay("cash"), InvalidPaymentException);
 }
 
+TEST_CASE("Reservation rejects invalid payment states and methods", "[booking]")
+{
+    support::BookingContext context;
+    Reservation reservation = support::make_reservation(context);
+
+    CHECK_THROWS_AS(reservation.pay("card"), InvalidReservationStateException);
+    CHECK(reservation.refund_amount(support::today()).is_zero());
+    Reservation without_policy("no-policy", &context.guest, &context.room,
+                               context.check_in, context.check_out, 1);
+    CHECK_THROWS_AS(without_policy.cancel(support::today()),
+                    CancellationNotAllowedException);
+
+    reservation.confirm(context.calendar);
+    CHECK_THROWS_AS(reservation.pay("crypto"), InvalidPaymentException);
+}
+
 TEST_CASE("Paid reservation refunds according to cancellation policy", "[booking]")
 {
     support::BookingContext context;
