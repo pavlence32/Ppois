@@ -1,0 +1,128 @@
+name: Lab 3 CI/CD
+
+on:
+  push:
+    branches:
+      - lab3
+      - main
+    paths:
+      - 'lab3/**'
+      - '.github/workflows/lab3.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build, test, coverage and lint
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install cmake gcovr llvm catch2
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+          echo "CC=$(brew --prefix llvm)/bin/clang" >> "$GITHUB_ENV"
+          echo "CXX=$(brew --prefix llvm)/bin/clang++" >> "$GITHUB_ENV"
+
+      - name: Configure Lab 3
+        run: |
+          cmake -S lab3 -B lab3/build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -DENABLE_COVERAGE=ON
+
+      - name: Build Lab 3 tests
+        run: cmake --build lab3/build --target lab3_tests --parallel 2
+
+      - name: Test Lab 3
+        run: ctest --test-dir lab3/build --output-on-failure --no-tests=error
+
+      - name: Check line coverage (at least 91 percent)
+        working-directory: lab3
+        run: |
+          gcovr \
+            --root . \
+            --object-directory build \
+            --gcov-executable "$(brew --prefix llvm)/bin/llvm-cov gcov" \
+            --filter 'src/.*' \
+            --exclude 'tests/.*' \
+            --exclude 'cli/.*' \
+            --exclude 'build/.*' \
+            --print-summary \
+            --fail-under-line 91
+
+      - name: Lint Lab 3
+        run: |
+          find lab3/src -name '*.cpp' -print0 | \
+            xargs -0 clang-tidy -p lab3/build \
+              --checks='-*,clang-analyzer-*' \
+              --warnings-as-errors='clang-analyzer-*'
+
+  build:
+    name: Build Lab 3 release
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install cmake catch2
+
+      - name: Configure Lab 3 release
+        run: |
+          cmake -S lab3 -B lab3/release-build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DENABLE_COVERAGE=OFF
+
+      - name: Build Lab 3 CLI
+        run: cmake --build lab3/release-build --target lab3_cli --parallel 2
+
+      - name: Prepare release archive
+        run: |
+          mkdir -p release
+          cp lab3/release-build/lab3_cli release/lab3_cli
+          tar -czf lab3-macos.tar.gz -C release .
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lab3-macos
+          path: lab3-macos.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: macos-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lab3-macos
+          path: release
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: lab3-${{ github.run_number }}
+          name: Lab 3 ${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: release/lab3-macos.tar.gz
