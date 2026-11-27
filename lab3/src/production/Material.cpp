@@ -67,6 +67,21 @@ int Material::quantity() const
     return quantity_;
 }
 
+const std::string& Material::name() const
+{
+    return name_;
+}
+
+const std::string& Material::unit() const
+{
+    return unit_;
+}
+
+int Material::reorder_level() const
+{
+    return reorder_level_;
+}
+
 Supplier::Supplier(int id,
                    std::string name,
                    Address address,

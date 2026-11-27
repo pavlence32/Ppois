@@ -97,3 +97,7 @@ const Money& Payment::amount() const
 {
     return amount_;
 }
+int Payment::invoice_id() const
+{
+    return invoice_id_;
+}

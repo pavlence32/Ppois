@@ -17,6 +17,7 @@
 #include "production/Material.hpp"
 #include "production/Product.hpp"
 #include "production/ProductionLine.hpp"
+#include "production/ProductionTimer.hpp"
 #include "production/QualityCheck.hpp"
 #include "production/Warehouse.hpp"
 #include "production/WorkOrder.hpp"
@@ -35,17 +36,29 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <poll.h>
+#include <unistd.h>
 
 namespace
 {
 struct InputClosed {};
+std::function<void()> update_production;
 
 std::string read_string(const std::string& prompt)
 {
     std::cout << prompt;
+    if (isatty(STDIN_FILENO))
+    {
+        pollfd input{STDIN_FILENO, POLLIN, 0};
+        while (poll(&input, 1, 250) == 0)
+            if (update_production)
+                update_production();
+    }
     std::string value;
     if (!std::getline(std::cin, value))
         throw InputClosed{};
+    if (update_production)
+        update_production();
     return value;
 }
 
@@ -83,6 +96,19 @@ void print_header(const std::string& text)
 const char* yes_no(bool value)
 {
     return value ? "да" : "нет";
+}
+
+const char* order_status(OrderStatus status)
+{
+    switch (status)
+    {
+    case OrderStatus::Draft: return "черновик";
+    case OrderStatus::Confirmed: return "подтверждён";
+    case OrderStatus::InProduction: return "в производстве";
+    case OrderStatus::Completed: return "выполнен";
+    case OrderStatus::Cancelled: return "отменён";
+    }
+    return "неизвестен";
 }
 
 template <typename T>
@@ -156,12 +182,17 @@ int main() try
     Supplier supplier(300, "МеталлСнаб", plant_address, plant_contact, 5, 8.5);
     Machine press(1, "Пресс", 0.92, 1000, 1);
     Machine cutter(2, "Резак", 0.88, 800, 1);
+    Machine second_press(3, "Пресс второй линии", 0.92, 1000, 2);
+    Machine second_cutter(4, "Резак второй линии", 0.88, 800, 2);
     press.start();
     press.record_operation(120);
     std::map<int, ProductionLine> lines;
     lines.emplace(1, ProductionLine(1, "Линия кронштейнов", 60));
+    lines.emplace(2, ProductionLine(2, "Вторая линия кронштейнов", 60));
     lines.at(1).add_machine(1);
     lines.at(1).add_machine(2);
+    lines.at(2).add_machine(3);
+    lines.at(2).add_machine(4);
     std::map<int, WorkOrder> work_orders;
     work_orders.emplace(500, WorkOrder(500, 100, 300, 1, 30));
     work_orders.at(500).confirm();
@@ -210,6 +241,18 @@ int main() try
     DocumentNumber tickets("QC", 1);
     int next_id = 2000;
 
+    ProductionTimer production_timer;
+    production_timer.track(500);
+    std::map<int, double> recorded_progress{{500, work_orders.at(500).completion_percent()}};
+    update_production = [&] {
+        for (int id : production_timer.update(work_orders, lines))
+        {
+            std::cout << "\nЛиния " << work_orders.at(id).line_id() << ", заказ #" << id
+                      << ": 100% — выполнен автоматически.\n";
+            audit.record("автоматически завершён заказ #" + std::to_string(id));
+        }
+    };
+
     const auto print_employees = [&] {
         Money total;
         int skills = 0;
@@ -237,9 +280,27 @@ int main() try
         return employee;
     };
     const auto print_materials = [&] {
-        for (const auto& [id, material] : materials)
-            std::cout << id << ". Остаток: " << material.quantity()
-                      << ", доступно: " << warehouse.find(id)->available() << "\n";
+        int place = 0;
+        for (const auto& item : warehouse.items())
+        {
+            const auto& material = materials.at(item.material_id());
+            std::cout << "\nМесто " << ++place << ":\n"
+                      << "  Статус: " << (item.available() > 0 ? "занято, материал доступен" : "занято, доступный остаток исчерпан") << "\n"
+                      << "  Адрес хранения: " << item.location() << "\n"
+                      << "  Материал: #" << material.id() << " — " << material.name() << "\n"
+                      << "  Цена за 1 " << material.unit() << ": " << material.valuation(1).value() << "\n"
+                      << "  Учтено на складе: " << item.quantity() << " " << material.unit() << "\n"
+                      << "  Зарезервировано (включая списание и отгрузку): " << item.reserved() << " " << material.unit() << "\n"
+                      << "  Доступно: " << item.available() << " " << material.unit() << "\n"
+                      << "  Стоимость доступного остатка: " << material.valuation(item.available()).value() << "\n"
+                      << "  Учётная стоимость позиции с резервом: " << item.value().value() << "\n"
+                      << "  Порог закупки: " << material.reorder_level() << " " << material.unit() << "\n"
+                      << "  Требует закупки: " << yes_no(material.needs_reorder()) << "\n";
+        }
+        if (warehouse.free_capacity() > 0)
+            std::cout << "\nСвободные места: " << place + 1 << "–"
+                      << warehouse.occupancy() + warehouse.free_capacity()
+                      << " (" << warehouse.free_capacity() << ").\n";
     };
 
     bool running = true;
@@ -269,41 +330,103 @@ int main() try
                           << "Налог: " << accountant.calculate_tax(Money(1000)).value() << "\n";
                 break;
             case 2:
-                print_header("Производство");
-                std::cout << "Склад: " << warehouse.occupancy() << "/500, стоимость "
-                          << warehouse.total_value().value() << "\n"
-                          << "Сталь требует закупки: " << yes_no(materials.at(200).needs_reorder()) << "\n";
+                print_header("Склад");
+                std::cout << "  Занято мест: " << warehouse.occupancy() << " из "
+                          << warehouse.occupancy() + warehouse.free_capacity() << "\n"
+                          << "  Свободно мест: " << warehouse.free_capacity() << "\n"
+                          << "  Общая учётная стоимость с резервом: " << warehouse.total_value().value() << "\n";
                 print_materials();
+                print_header("Производственные заказы");
                 for (const auto& [id, order] : work_orders)
-                    std::cout << "Заказ #" << id << " выполнен на " << order.completion_percent()
-                              << "%, оценка стоимости: " << order.estimated_cost(bracket).value() << "\n";
+                    std::cout << "\nЗаказ #" << id << ":\n"
+                              << "  Изделие: #" << order.product_id() << "\n"
+                              << "  Линия: " << order.line_id() << "\n"
+                              << "  Статус: " << order_status(order.status()) << "\n"
+                              << "  Заказано деталей: " << order.completed_quantity() + order.remaining_quantity() << "\n"
+                              << "  Изготовлено: " << order.completed_quantity() << "\n"
+                              << "  Осталось изготовить: " << order.remaining_quantity() << "\n"
+                              << "  Выполнено: " << order.completion_percent() << "%\n"
+                              << "  Оценка стоимости: " << order.estimated_cost(bracket).value() << "\n";
+                print_header("Производственные линии");
                 for (const auto& [id, line] : lines)
-                    std::cout << "Линия #" << id << " активна: " << yes_no(line.is_active())
-                              << ", мощность " << line.capacity_per_hour() << " ед/ч\n";
-                std::cout << "Станок требует ТО: " << yes_no(press.needs_maintenance())
-                          << ", доступность " << press.availability() * 100 << "%\n"
-                          << "План: " << plan.order_count() << " заказов, средний бюджет "
-                          << plan.average_order_budget().value() << "\n"
-                          << "Поставщик надёжен: " << yes_no(supplier.is_reliable()) << "\n";
+                    std::cout << "Линия #" << id << ":\n"
+                              << "  Активна: " << yes_no(line.is_active()) << "\n"
+                              << "  Мощность: " << line.capacity_per_hour() << " ед/ч\n";
+                print_header("Станки");
+                std::cout << "Станок #1 — Пресс:\n"
+                          << "  Требует ТО: " << yes_no(press.needs_maintenance()) << "\n"
+                          << "  Доступность: " << press.availability() * 100 << "%\n"
+                          << "Станок #2 — Резак:\n"
+                          << "  Требует ТО: " << yes_no(cutter.needs_maintenance()) << "\n"
+                          << "  Доступность: " << cutter.availability() * 100 << "%\n"
+                          << "Станок #3 — Пресс второй линии:\n"
+                          << "  Требует ТО: " << yes_no(second_press.needs_maintenance()) << "\n"
+                          << "  Доступность: " << second_press.availability() * 100 << "%\n"
+                          << "Станок #4 — Резак второй линии:\n"
+                          << "  Требует ТО: " << yes_no(second_cutter.needs_maintenance()) << "\n"
+                          << "  Доступность: " << second_cutter.availability() * 100 << "%\n";
+                print_header("Производственный план");
+                std::cout << "  Количество заказов: " << plan.order_count() << "\n"
+                          << "  Средний бюджет на заказ: " << plan.average_order_budget().value() << "\n";
+                print_header("Поставщик #300 — МеталлСнаб");
+                std::cout << "  Надёжен: " << yes_no(supplier.is_reliable()) << "\n";
                 break;
             case 3:
                 print_header("Продажи и финансы");
                 for (const auto& [id, order] : sales_orders)
-                    std::cout << "Заказ #" << id << ", клиент #" << order.customer_id()
-                              << ": " << order.total().value() << ", остаток " << order.outstanding().value() << "\n";
+                {
+                    const auto& customer = customers.at(order.customer_id());
+                    std::cout << "\nЗаказ #" << id << ":\n"
+                              << "  Статус: " << order_status(order.status()) << "\n"
+                              << "  Клиент: #" << order.customer_id() << " — " << customer.name() << "\n"
+                              << "  Позиций в заказе: " << order.item_count() << "\n"
+                              << "  Общая сумма: " << order.total().value() << "\n"
+                              << "  Оплачено: " << (order.total() - order.outstanding()).value() << "\n"
+                              << "  Осталось оплатить: " << order.outstanding().value() << "\n";
+                    bool has_invoice = false;
+                    for (const auto& [invoice_id, invoice] : invoices)
+                    {
+                        if (invoice_orders.at(invoice_id) != id)
+                            continue;
+                        has_invoice = true;
+                        std::cout << "  Счёт #" << invoice_id << ":\n"
+                                  << "    Выставлен: " << yes_no(invoice.is_issued()) << "\n"
+                                  << "    Осталось оплатить: " << invoice.balance().value() << "\n"
+                                  << "    Полностью оплачен: " << yes_no(invoice.is_settled()) << "\n"
+                                  << "    Платежи:\n";
+                        bool has_payment = false;
+                        for (const auto& payment : payments)
+                            if (payment.invoice_id() == invoice_id)
+                            {
+                                has_payment = true;
+                                std::cout << "      " << payment.receipt() << "\n";
+                            }
+                        if (!has_payment)
+                            std::cout << "      Нет платежей.\n";
+                    }
+                    if (!has_invoice)
+                        std::cout << "  Счёт: не выставлен\n";
+                    // Демонстрационная отгрузка создана для заказа #1000.
+                    if (id == 1000)
+                        std::cout << "  Доставка #1400:\n"
+                                  << "    Назначение: Минск\n"
+                                  << "    Статус: " << (shipment.is_delivered() ? "доставлена" : "подготовлена") << "\n"
+                                  << "    Дней в пути: " << shipment.transit_days() << "\n";
+                    else
+                        std::cout << "  Доставка: не оформлена\n";
+                }
+                print_header("Клиенты и договоры");
                 for (const auto& [id, customer] : customers)
-                    std::cout << "Клиент #" << id << " " << customer.name()
-                              << " может заказать ещё: " << customer.available_credit().value() << "\n";
-                std::cout << "Договор подписан: " << yes_no(contract.is_signed())
-                          << ", пеня за 10 дней: " << contract.penalty(10).value() << "\n";
-                for (const auto& [id, invoice] : invoices)
-                    std::cout << "Счёт #" << id << ": " << invoice.balance().value()
-                              << ", оплачен: " << yes_no(invoice.is_settled()) << "\n";
-                for (const auto& payment : payments)
-                    std::cout << payment.receipt() << "\n";
-                std::cout << "Доставка: " << (shipment.is_delivered() ? "доставлена" : "подготовлена")
-                          << ", дней в пути " << shipment.transit_days() << "\n"
-                          << "Отчёт: " << report.summary() << "\n";
+                {
+                    std::cout << "Клиент #" << id << ": " << customer.name() << "\n"
+                              << "  Доступный кредитный лимит: " << customer.available_credit().value() << "\n";
+                    if (id == 900)
+                        std::cout << "  Договор #1100:\n"
+                                  << "    Подписан: " << yes_no(contract.is_signed()) << "\n"
+                                  << "    Пеня при задержке на 10 дней: " << contract.penalty(10).value() << "\n";
+                }
+                print_header("Финансовый отчёт");
+                std::cout << report.summary() << "\n";
                 break;
             case 4:
                 print_header("Инфраструктура");
@@ -319,20 +442,33 @@ int main() try
             case 5:
             {
                 print_header("Контроль качества");
-                const int sample = read_int("Размер выборки: ", 1);
-                const int count = read_int("Найдено дефектов: ", 0, sample);
-                quality_checks.emplace_back(next_id++, 100, sample, employees.at(5).full_name());
+                for (const auto& [id, order] : work_orders)
+                    std::cout << "Заказ #" << id << ": изготовлено " << order.completed_quantity()
+                              << " деталей, статус: " << order_status(order.status()) << "\n";
+                const int order_id = select_id(work_orders, "Номер производственного заказа для проверки: ");
+                const auto& order = work_orders.at(order_id);
+                std::cout << "Заказ #" << order_id << ": изготовлено " << order.completed_quantity() << " деталей.\n";
+                if (order.completed_quantity() == 0)
+                {
+                    std::cout << "Проверка невозможна: по заказу ещё нет изготовленных деталей.\n";
+                    break;
+                }
+                const int sample = read_int("Сколько деталей проверяем: ", 1, order.completed_quantity());
+                const int count = read_int("Оценка качества — сколько из проверенных деталей бракованные: ", 0, sample);
+                quality_checks.emplace_back(next_id++, order.product_id(), sample, employees.at(5).full_name());
                 auto& quality = quality_checks.back();
                 if (count > 0)
                     quality.record_defect(count);
-                std::cout << quality.summary() << "\nДоля дефектов: " << quality.defect_rate()
+                std::cout << "Результат проверки заказа #" << order_id << ":\n"
+                          << quality.summary() << "\nДоля дефектов: " << quality.defect_rate()
                           << "%\nТребуется доработка: " << yes_no(quality.needs_rework()) << "\n";
                 if (count > 0)
                 {
-                    defects.emplace_back(next_id++, 100, "high", "Дефекты при проверке партии");
+                    defects.emplace_back(next_id++, order.product_id(), "high",
+                                         "Дефекты при проверке заказа #" + std::to_string(order_id));
                     std::cout << "Тикет дефекта: " << defects.back().ticket_code(tickets) << "\n";
                 }
-                audit.record("проверка качества");
+                audit.record("проверка качества заказа #" + std::to_string(order_id));
                 break;
             }
             case 6:
@@ -345,7 +481,7 @@ int main() try
             {
                 print_header("Заявка на ремонт");
                 const std::string description = read_string("Описание: ");
-                const int machine_id = read_int("Станок (1 — пресс, 2 — резак): ", 1, 2);
+                const int machine_id = read_int("Станок (1, 2 — первая линия; 3, 4 — вторая): ", 1, 4);
                 const int priority = read_int("Приоритет (1 — низкий, 2 — обычный, 3 — высокий, 4 — критический): ", 1, 4);
                 const Money estimate = read_money("Оценка стоимости: ");
                 const int id = next_id++;
@@ -426,9 +562,12 @@ int main() try
                     {"Создать заказ", [&] {
                         const int units = read_int("Количество кронштейнов: ", 1);
                         const int day = read_int("Срок исполнения, день: ");
+                        const int line_id = select_id(lines, "Номер линии (1 или 2): ");
                         const int id = next_id++;
-                        work_orders.emplace(id, WorkOrder(id, bracket.id(), units, 1, day));
+                        work_orders.emplace(id, WorkOrder(id, bracket.id(), units, line_id, day));
                         work_orders.at(id).confirm();
+                        production_timer.track(id);
+                        recorded_progress[id] = 0.0;
                         plan.add_order(id);
                         std::cout << "Заказ #" << id << " создан и подтверждён.\n";
                     }},
@@ -436,17 +575,25 @@ int main() try
                         for (const auto& [id, line] : lines)
                             std::cout << id << ". Активна: " << yes_no(line.is_active()) << "\n";
                         const int id = select_id(lines, "Номер линии: ");
+                        if (lines.at(id).is_active())
+                        {
+                            std::cout << "Линия уже работает.\n";
+                            return;
+                        }
+                        update_production();
                         lines.at(id).activate();
-                        std::cout << "Линия запущена.\n";
+                        std::cout << "Линия " << id << " запущена.\n";
                     }},
                     {"Зафиксировать прогресс", [&] {
+                        update_production();
                         for (const auto& [id, order] : work_orders)
-                            std::cout << id << ". Выполнено: " << order.completion_percent() << "%\n";
-                        auto& order = work_orders.at(select_id(work_orders, "Номер заказа: "));
-                        if (order.remaining_quantity() == 0)
-                            throw InvalidOrderStateException("Заказ уже выполнен");
-                        order.record_progress(read_int("Выпущено изделий: ", 1, order.remaining_quantity()));
-                        std::cout << "Выполнено: " << order.completion_percent() << "%\n";
+                        {
+                            std::cout << "Линия " << order.line_id() << ", заказ #" << id << ": "
+                                      << recorded_progress.at(id) << "% -> " << order.completion_percent()
+                                      << "% (" << order_status(order.status()) << ")\n";
+                            recorded_progress[id] = order.completion_percent();
+                        }
+                        audit.record("зафиксирован прогресс производства");
                     }}
                 });
                 break;

@@ -15,6 +15,7 @@ class WorkOrder
     OrderStatus status_;
     int due_day_;
     int completed_quantity_;
+    double partial_quantity_ = 0.0;
 
 public:
     WorkOrder(int id,
@@ -32,6 +33,10 @@ public:
     void confirm();
     Money estimated_cost(const Product& product) const;
     int remaining_quantity() const;
+    int completed_quantity() const;
+    int product_id() const;
+    int line_id() const;
+    void advance_minutes(int minutes);
     OrderStatus status() const;
 };
 

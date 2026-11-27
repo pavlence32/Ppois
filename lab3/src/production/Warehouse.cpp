@@ -50,6 +50,21 @@ int InventoryItem::material_id() const
     return material_.id();
 }
 
+const std::string& InventoryItem::location() const
+{
+    return location_;
+}
+
+int InventoryItem::quantity() const
+{
+    return quantity_;
+}
+
+int InventoryItem::reserved() const
+{
+    return reserved_;
+}
+
 Money InventoryItem::value() const
 {
     return material_.valuation(quantity_);
@@ -109,4 +124,9 @@ void Warehouse::dispatch(int material_id, int quantity)
 int Warehouse::occupancy() const
 {
     return static_cast<int>(items_.size());
+}
+
+const std::vector<InventoryItem>& Warehouse::items() const
+{
+    return items_;
 }

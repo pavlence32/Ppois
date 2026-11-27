@@ -12,6 +12,24 @@ cmake --build build
 ./build/lab3_cli
 ```
 
+## Покрытие тестов
+
+Сборка с покрытием и запуск тестов:
+
+```bash
+cmake -S . -B build -DENABLE_COVERAGE=ON
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
+Вывод покрытия в терминал (macOS, требуется `gcovr`):
+
+```bash
+gcovr --root . --object-directory build \
+  --gcov-executable "$(xcrun --find llvm-cov) gcov" \
+  --filter 'src/.*' --print-summary
+```
+
 
 
 

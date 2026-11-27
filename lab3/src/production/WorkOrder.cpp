@@ -34,12 +34,14 @@ void WorkOrder::record_progress(int units)
     if (units <= 0)
         throw FactoryException("Прогресс должен быть положительным");
     completed_quantity_ = std::min(quantity_, completed_quantity_ + units);
+    if (is_complete())
+        partial_quantity_ = 0.0;
     status_ = is_complete() ? OrderStatus::Completed : OrderStatus::InProduction;
 }
 
 double WorkOrder::completion_percent() const
 {
-    return 100.0 * completed_quantity_ / quantity_;
+    return 100.0 * (completed_quantity_ + partial_quantity_) / quantity_;
 }
 
 bool WorkOrder::is_overdue(int today) const
@@ -76,6 +78,22 @@ int WorkOrder::remaining_quantity() const
 OrderStatus WorkOrder::status() const
 {
     return status_;
+}
+
+int WorkOrder::line_id() const
+{
+    return line_id_;
+}
+
+void WorkOrder::advance_minutes(int minutes)
+{
+    if (minutes <= 0 || (status_ != OrderStatus::Confirmed && status_ != OrderStatus::InProduction))
+        return;
+    const double total = std::min(static_cast<double>(quantity_),
+                                 completed_quantity_ + partial_quantity_ + quantity_ * (minutes / 100.0));
+    completed_quantity_ = static_cast<int>(total + 1e-9);
+    partial_quantity_ = std::max(0.0, total - completed_quantity_);
+    status_ = is_complete() ? OrderStatus::Completed : OrderStatus::InProduction;
 }
 
 ProductionPlan::ProductionPlan(std::string period, Money budget, double utilization_target)
@@ -125,4 +143,13 @@ Money ProductionPlan::average_order_budget() const
 int ProductionPlan::order_count() const
 {
     return static_cast<int>(order_ids_.size());
+}
+int WorkOrder::completed_quantity() const
+{
+    return completed_quantity_;
+}
+
+int WorkOrder::product_id() const
+{
+    return product_id_;
 }

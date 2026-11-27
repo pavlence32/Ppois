@@ -24,6 +24,9 @@ public:
     void add(int amount);
     Money value() const;
     int material_id() const;
+    const std::string& location() const;
+    int quantity() const;
+    int reserved() const;
 };
 
 class Warehouse
@@ -44,4 +47,5 @@ public:
     int free_capacity() const;
     void dispatch(int material_id, int quantity);
     int occupancy() const;
+    const std::vector<InventoryItem>& items() const;
 };

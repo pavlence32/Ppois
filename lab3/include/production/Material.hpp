@@ -31,6 +31,9 @@ public:
     Money valuation(int units) const;
     int id() const;
     int quantity() const;
+    const std::string& name() const;
+    const std::string& unit() const;
+    int reorder_level() const;
 };
 
 class Supplier

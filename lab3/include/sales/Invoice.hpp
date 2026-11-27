@@ -41,4 +41,5 @@ public:
     std::string receipt() const;
     bool is_confirmed() const;
     const Money& amount() const;
+    int invoice_id() const;
 };
